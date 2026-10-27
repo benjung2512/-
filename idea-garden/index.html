@@ -86,13 +86,14 @@ p { margin: 0; }
     justify-content: center; align-items: center; gap: 56px;
     padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  .guide { display: flex; flex-direction: column; gap: 22px; width: 340px; max-height: 100%; overflow: auto; padding-block: 8px; }
+  body.with-guide .guide { display: flex; flex-direction: column; gap: 22px; width: 340px; max-height: 100%; overflow: auto; padding-block: 8px; }
   .app {
     width: 390px; height: min(820px, 100%); flex: none;
     border-radius: 40px; border: 9px solid var(--frame); box-shadow: var(--shadow);
   }
   .strip .guide-btn { display: none; }
 }
+body:not(.with-guide) .strip .guide-btn { display: none; }
 
 /* ---------- 안내 패널 ---------- */
 .guide h1 { font-family: var(--font-display); font-size: 28px; line-height: 1.3; }
@@ -983,7 +984,7 @@ SCREENS.me = () => {
     <div class="list panel" style="padding:4px 18px">
       ${[["points", "포인트", `${balance()}P`], ["requests", "받은 신청", pend ? `<span class="chip warn">${pend}건 대기</span>` : "없음"], ["admin", "관리자 화면 (운영진 전용)", "지표·포인트 설정"]].map(([k, l, v]) => `<button class="kv" style="width:100%;border:0;background:none;text-align:left;padding:14px 0" data-action="go" data-to="${k}"><span>${l}</span><span class="muted">${v} ›</span></button>`).join("")}
     </div>
-    <button class="link-btn" data-action="logout" style="align-self:center;color:var(--soil-soft);font-size:14px">로그아웃</button>
+    <div class="row" style="justify-content:center;gap:20px"><button class="link-btn" data-action="logout" style="color:var(--soil-soft);font-size:14px">로그아웃</button><button class="link-btn" data-action="reset" style="color:var(--soil-soft);font-size:14px">예시 데이터로 처음부터</button></div>
   </div>`;
 };
 
@@ -1557,6 +1558,7 @@ document.addEventListener("input", (ev) => {
   if (t.dataset.setting) { const v = Math.max(1, Math.min(999, parseInt(t.value || "0", 10) || 1)); S.settings[t.dataset.setting] = v; save(); }
 });
 
+if (location.hash === "#guide") document.body.classList.add("with-guide");
 render(true);
 })();
 </script>
