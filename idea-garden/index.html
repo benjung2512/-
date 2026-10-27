@@ -1,0 +1,1554 @@
+<title>아이디어 정원 프로토타입</title>
+<meta name="description" content="불편했던 순간을 씨앗으로 심고 정원 신선의 질문으로 기획서까지 키우는 앱의 베타 프로토타입">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* Layout: 데스크톱은 왼쪽 안내 패널 + 오른쪽 휴대폰 프레임, 휴대폰에서는 앱이 화면 전체 */
+:root {
+  --dew: #f3f6ef;        /* 배경: 아침 온실 */
+  --paper: #fbfcf8;      /* 카드·시트 */
+  --soil: #2b2a22;       /* 글자 */
+  --soil-soft: #5c5a4c;
+  --soil-faint: #8a8875;
+  --line: #d3dac6;
+  --leaf: #3f6b3a;       /* 주요 행동 */
+  --leaf-deep: #2c4f2a;
+  --on-leaf: #fbfcf8;
+  --sprout: #cfe3b5;
+  --sprout-soft: #e6f0d8;
+  --bloom: #7b5ea7;      /* 꽃에만 쓰는 도라지색 */
+  --bloom-soft: #ece5f5;
+  --danger: #a3261e;
+  --danger-soft: #f8e4e1;
+  --grass-0: #e4e9dc; --grass-1: #c3dba5; --grass-2: #86b366; --grass-3: #4f8a3f;
+  --frame: #c9d1bc;
+  --stage-bg: #e3e9da;
+  --shadow: 0 24px 60px -28px rgba(44, 79, 42, .45);
+  --vase: rgba(160, 190, 200, .35);
+  --vase-line: rgba(90, 120, 130, .55);
+
+  --font-display: "Gowun Batang", "AppleMyungjo", "Noto Serif KR", serif;
+  --font-sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --r-field: 12px;
+  --r-sheet: 22px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --dew: #151a13; --paper: #1d231a; --soil: #e9ecdf; --soil-soft: #b5baa6; --soil-faint: #878d78;
+    --line: #353d2f; --leaf: #7fb26a; --leaf-deep: #a6d08f; --on-leaf: #10150e; --sprout: #3b5233; --sprout-soft: #243020;
+    --bloom: #b49be0; --bloom-soft: #2d2540; --danger: #ef8b80; --danger-soft: #3a1f1c;
+    --grass-0: #262d22; --grass-1: #3a5a2e; --grass-2: #55873f; --grass-3: #86c065;
+    --frame: #2c3427; --stage-bg: #0f130d; --shadow: 0 24px 60px -28px rgba(0,0,0,.8);
+    --vase: rgba(140, 180, 190, .18); --vase-line: rgba(160, 200, 210, .45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --dew: #151a13; --paper: #1d231a; --soil: #e9ecdf; --soil-soft: #b5baa6; --soil-faint: #878d78;
+  --line: #353d2f; --leaf: #7fb26a; --leaf-deep: #a6d08f; --on-leaf: #10150e; --sprout: #3b5233; --sprout-soft: #243020;
+  --bloom: #b49be0; --bloom-soft: #2d2540; --danger: #ef8b80; --danger-soft: #3a1f1c;
+  --grass-0: #262d22; --grass-1: #3a5a2e; --grass-2: #55873f; --grass-3: #86c065;
+  --frame: #2c3427; --stage-bg: #0f130d; --shadow: 0 24px 60px -28px rgba(0,0,0,.8);
+  --vase: rgba(140, 180, 190, .18); --vase-line: rgba(160, 200, 210, .45);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--stage-bg); color: var(--soil);
+  font-family: var(--font-sans); font-size: 15px; line-height: 1.6;
+  word-break: keep-all; overflow-wrap: anywhere; -webkit-text-size-adjust: 100%;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--leaf); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.display { font-family: var(--font-display); font-weight: 400; }
+
+/* ---------- 무대 ---------- */
+.stage { height: 100%; display: flex; }
+.guide { display: none; }
+.app {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  width: 100%; height: 100%; background: var(--dew);
+}
+@media (min-width: 900px) {
+  .stage {
+    justify-content: center; align-items: center; gap: 56px;
+    padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .guide { display: flex; flex-direction: column; gap: 22px; width: 340px; max-height: 100%; overflow: auto; padding-block: 8px; }
+  .app {
+    width: 390px; height: min(820px, 100%); flex: none;
+    border-radius: 40px; border: 9px solid var(--frame); box-shadow: var(--shadow);
+  }
+  .strip .guide-btn { display: none; }
+}
+
+/* ---------- 안내 패널 ---------- */
+.guide h1 { font-family: var(--font-display); font-size: 28px; line-height: 1.3; }
+.guide .lede { color: var(--soil-soft); font-size: 15px; }
+.guide h2 { font-size: 13px; font-weight: 600; color: var(--soil-soft); letter-spacing: .02em; }
+.guide ol, .guide ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.guide ol { counter-reset: step; }
+.guide .jump {
+  width: 100%; text-align: left; display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: start;
+  padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: transparent;
+}
+.guide .jump:hover { background: var(--paper); border-color: var(--line); }
+.guide ol .jump::before {
+  counter-increment: step; content: counter(step);
+  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--sprout-soft); color: var(--leaf-deep); font-size: 12px; font-weight: 600; margin-top: 1px;
+}
+.guide ul .jump { grid-template-columns: 1fr; }
+.jump b { display: block; font-weight: 500; font-size: 15px; }
+.jump span { display: block; font-size: 13px; color: var(--soil-soft); line-height: 1.5; }
+.guide .foot { font-size: 13px; color: var(--soil-faint); display: flex; flex-direction: column; gap: 8px; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--leaf-deep); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+
+/* ---------- 앱 크롬 ---------- */
+.strip {
+  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 18px; font-size: 12px; color: var(--soil-faint); border-bottom: 1px dashed var(--line);
+}
+.strip .guide-btn { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 2px 10px; font-size: 12px; color: var(--soil-soft); }
+.view { flex: 1; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; }
+.view-inner { padding: 18px 18px 28px; display: flex; flex-direction: column; gap: 20px; }
+.nav { flex: none; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); background: var(--paper); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.nav button { min-height: 62px; border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; color: var(--soil-soft); }
+.nav button[aria-current="page"] { color: var(--leaf-deep); font-weight: 600; }
+.nav svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; }
+.topbar .left { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.topbar h1 { font-family: var(--font-display); font-size: 22px; line-height: 1.25; }
+.back { width: 38px; height: 38px; margin-left: -10px; border: 0; background: none; border-radius: 50%; display: grid; place-items: center; color: var(--soil-soft); }
+.back:hover { background: var(--sprout-soft); }
+.back svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.points-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: var(--paper); border: 1px solid var(--line); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.points-chip i { width: 14px; height: 14px; border-radius: 50%; background: #d9b44a; box-shadow: inset 0 0 0 2px #b8902a; }
+
+/* ---------- 공통 요소 ---------- */
+.btn { min-height: 48px; padding: 0 18px; border-radius: var(--r-field); border: 1px solid transparent; font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.primary { background: var(--leaf); color: var(--on-leaf); }
+.btn.primary:hover { background: var(--leaf-deep); }
+.btn.quiet { background: transparent; border-color: var(--line); color: var(--leaf-deep); }
+.btn.quiet:hover { background: var(--sprout-soft); }
+.btn.bloom { background: var(--bloom); color: var(--paper); }
+.btn.small { min-height: 36px; padding: 0 12px; font-size: 14px; border-radius: 10px; white-space: nowrap; flex: none; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.btn.full { width: 100%; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.muted { color: var(--soil-soft); }
+.faint { color: var(--soil-faint); font-size: 13px; }
+.sec-title { font-size: 15px; font-weight: 600; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.sec-title small { font-weight: 400; font-size: 13px; color: var(--soil-soft); }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-sheet); padding: 18px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: 999px; font-size: 13px; background: var(--sprout-soft); color: var(--leaf-deep); }
+.chip.plain { background: transparent; border: 1px solid var(--line); color: var(--soil-soft); }
+.chip.bloom { background: var(--bloom-soft); color: var(--bloom); }
+.chip.warn { background: var(--danger-soft); color: var(--danger); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label, .field .label { font-size: 14px; font-weight: 500; }
+.field .hint { font-size: 13px; color: var(--soil-soft); }
+.input, .textarea { width: 100%; border: 1px solid var(--line); background: var(--paper); border-radius: var(--r-field); padding: 0 14px; font-size: 16px; }
+.input { height: 48px; }
+.textarea { padding: 12px 14px; min-height: 96px; resize: vertical; line-height: 1.6; }
+.input:focus, .textarea:focus { border-color: var(--leaf); outline: none; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-toggle { min-height: 36px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; }
+.tag-toggle[aria-pressed="true"], .tag-toggle:has(input:checked) { background: var(--leaf); border-color: var(--leaf); color: var(--on-leaf); }
+label.tag-toggle { position: relative; cursor: pointer; }
+label.tag-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+label.tag-toggle:has(input:focus-visible) { outline: 2px solid var(--leaf); outline-offset: 2px; }
+.notice { border-radius: var(--r-field); padding: 12px 14px; font-size: 14px; background: var(--sprout-soft); color: var(--leaf-deep); }
+.notice.bloom { background: var(--bloom-soft); color: var(--bloom); }
+.empty { text-align: center; padding: 28px 12px; color: var(--soil-soft); }
+.divider { height: 1px; background: var(--line); }
+
+/* ---------- 랜딩 ---------- */
+.wordmark { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--leaf-deep); }
+.wordmark svg { width: 20px; height: 20px; }
+.hero h1 { font-family: var(--font-display); font-size: 32px; line-height: 1.3; letter-spacing: -.01em; }
+.hero p { margin-top: 12px; color: var(--soil-soft); max-width: 32ch; }
+.stage-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 2px; }
+.stage-names { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; text-align: center; }
+.stage-names b { display: block; font-size: 13px; font-weight: 500; }
+.stage-names span { display: block; font-size: 11px; line-height: 1.4; color: var(--soil-soft); }
+@keyframes grow-in { from { transform: translateY(6px) scaleY(.55); opacity: .25; } to { transform: none; opacity: 1; } }
+.grow-in { transform-origin: bottom center; animation: grow-in 650ms cubic-bezier(.2,.7,.2,1) both; }
+
+/* ---------- 정원 ---------- */
+.goal { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; }
+.goal-ring { width: 64px; height: 64px; }
+.goal-ring text { font-size: 15px; font-weight: 600; fill: var(--soil); font-family: var(--font-sans); }
+.grass { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(12px, 1fr); grid-template-rows: repeat(7, 1fr); gap: 3px; overflow-x: auto; padding-bottom: 2px; }
+.grass i { width: 100%; aspect-ratio: 1; min-width: 12px; border-radius: 3px; background: var(--grass-0); }
+.grass i[data-l="1"] { background: var(--grass-1); }
+.grass i[data-l="2"] { background: var(--grass-2); }
+.grass i[data-l="3"] { background: var(--grass-3); }
+.grass i[data-future] { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.grass i[data-today] { outline: 2px solid var(--leaf); outline-offset: 1px; }
+.grass-wrap { display: grid; grid-template-columns: auto 1fr; gap: 6px; }
+.grass-days { display: grid; grid-template-rows: repeat(7, 1fr); gap: 3px; font-size: 10px; color: var(--soil-faint); line-height: 1; align-items: center; }
+.week-marks { display: grid; grid-auto-flow: column; gap: 3px; margin-left: 18px; }
+.week-marks span { height: 4px; border-radius: 2px; background: transparent; }
+.week-marks span[data-done] { background: var(--leaf); }
+.legend { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--soil-faint); }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.beds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.pot-card { border: 1px solid var(--line); background: var(--paper); border-radius: 18px; padding: 10px 12px 14px; text-align: left; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pot-card:hover { border-color: var(--leaf); }
+.pot-card svg { width: 100%; height: 118px; }
+.pot-card .t { font-weight: 600; font-size: 15px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pot-card .s { font-size: 12px; color: var(--soil-soft); display: flex; justify-content: space-between; gap: 6px; }
+.pot-card.new { border-style: dashed; align-items: center; justify-content: center; color: var(--leaf-deep); min-height: 200px; gap: 10px; }
+.pot-card.new .plus { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--sprout-soft); font-size: 24px; }
+
+/* ---------- 씨앗 상세 ---------- */
+.idea-hero { display: grid; grid-template-columns: 112px 1fr; gap: 14px; align-items: end; }
+.idea-hero svg { width: 112px; height: 140px; }
+.idea-hero h1 { font-family: var(--font-display); font-size: 23px; line-height: 1.35; }
+.meta { font-size: 12px; color: var(--soil-faint); font-variant-numeric: tabular-nums; }
+.track { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.track div { display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: var(--soil-faint); text-align: center; }
+.track div::before { content: ""; height: 6px; border-radius: 3px; background: var(--grass-0); }
+.track div[data-on]::before { background: var(--leaf); }
+.track div[data-now] { color: var(--leaf-deep); font-weight: 600; }
+.track div[data-now]::before { background: repeating-linear-gradient(90deg, var(--leaf) 0 6px, var(--sprout) 6px 10px); }
+.track div[data-bloom][data-on]::before { background: var(--bloom); }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: none; padding: 10px 4px; font-size: 14px; color: var(--soil-soft); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--leaf-deep); border-color: var(--leaf); font-weight: 600; }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.checklist li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+.check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; margin-top: 1px; }
+.check[data-ok] { background: var(--leaf); border-color: var(--leaf); }
+.check svg { width: 12px; height: 12px; fill: none; stroke: var(--on-leaf); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.checklist b { font-weight: 500; display: block; }
+.checklist p { font-size: 13px; color: var(--soil-soft); }
+.quota { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--soil-soft); }
+.dots { display: inline-flex; gap: 4px; }
+.dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--leaf); }
+.dots i[data-used] { background: var(--grass-0); }
+.log { display: flex; flex-direction: column; gap: 12px; }
+.log-entry { border-left: 3px solid var(--sprout); padding: 2px 0 2px 14px; display: flex; flex-direction: column; gap: 8px; }
+.log-entry h3 { font-size: 14px; font-weight: 600; }
+.log-entry dl { margin: 0; display: grid; gap: 6px; }
+.log-entry dt { font-size: 12px; color: var(--soil-faint); }
+.log-entry dd { margin: 0; font-size: 14px; }
+.log-entry ul { margin: 0; padding-left: 18px; }
+
+/* ---------- 정원 신선 대화 ---------- */
+.chat-view { display: flex; flex-direction: column; height: 100%; }
+.chat-head { flex: none; padding: 12px 18px 10px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; background: var(--dew); }
+.chat-body { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.chat-foot { flex: none; border-top: 1px solid var(--line); background: var(--paper); padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 86%; padding: 10px 14px; border-radius: 16px; font-size: 15px; line-height: 1.6; white-space: pre-line; }
+.msg.sage { align-self: flex-start; background: var(--paper); border: 1px solid var(--line); border-top-left-radius: 4px; }
+.msg.sage .who { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--leaf-deep); font-weight: 600; margin-bottom: 4px; }
+.msg.sage .who svg { width: 16px; height: 16px; }
+.msg.sage .q { font-family: var(--font-display); font-size: 16.5px; line-height: 1.55; color: var(--soil); display: block; margin-top: 4px; }
+.msg.me { align-self: flex-end; background: var(--leaf); color: var(--on-leaf); border-top-right-radius: 4px; }
+.msg.note { align-self: center; background: none; color: var(--soil-faint); font-size: 12px; padding: 0; text-align: center; max-width: 100%; }
+.judge { align-self: stretch; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.judge h3 { font-size: 14px; font-weight: 600; }
+.composer { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+.composer textarea { min-height: 46px; max-height: 120px; padding: 11px 14px; resize: none; }
+.send { width: 46px; height: 46px; border-radius: 12px; border: 0; background: var(--leaf); color: var(--on-leaf); display: grid; place-items: center; }
+.send svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.foot-actions { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.typing { align-self: flex-start; display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 16px; background: var(--paper); border: 1px solid var(--line); }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--soil-faint); animation: blink 1s infinite; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+
+/* ---------- 기획서 ---------- */
+.plan { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 22px 20px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 1px 0 var(--line), 0 6px 0 -3px var(--paper), 0 6px 0 -2px var(--line); }
+.plan header { border-bottom: 1px solid var(--line); padding-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
+.plan header h1 { font-family: var(--font-display); font-size: 22px; line-height: 1.35; }
+.plan h2 { font-size: 13px; font-weight: 600; color: var(--leaf-deep); margin-bottom: 6px; }
+.plan [contenteditable] { font-size: 14.5px; line-height: 1.75; white-space: pre-line; border-radius: 6px; padding: 2px 4px; margin: 0 -4px; }
+.plan [contenteditable]:hover { background: var(--sprout-soft); }
+.plan [contenteditable]:focus { outline: 2px solid var(--leaf); background: transparent; }
+
+/* ---------- 공개 정원 · 꽃꽂이 ---------- */
+.bouquet { background: linear-gradient(180deg, var(--paper), var(--dew)); border: 1px solid var(--line); border-radius: var(--r-sheet); padding: 14px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.bouquet svg { width: 100%; height: auto; display: block; }
+.bouquet .flower { cursor: pointer; }
+.bouquet .flower:hover .petals, .bouquet .flower:focus .petals { transform: scale(1.12); }
+.bouquet .petals { transform-box: fill-box; transform-origin: center; transition: transform .2s; }
+.bouquet .flower:focus { outline: none; }
+.bouquet .flower:focus-visible circle.ring { stroke: var(--leaf); stroke-width: 2; }
+.bq-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--soil-soft); }
+.bq-legend button { border: 0; background: none; padding: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--soil-soft); }
+.bq-legend i { width: 9px; height: 9px; border-radius: 50%; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
+.seg button { border: 0; background: none; border-radius: 9px; min-height: 36px; font-size: 14px; color: var(--soil-soft); }
+.seg button[aria-pressed="true"] { background: var(--sprout-soft); color: var(--leaf-deep); font-weight: 600; }
+.filters { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.filters button { flex: none; }
+.feed-card { border: 1px solid var(--line); background: var(--paper); border-radius: 18px; padding: 14px; display: grid; grid-template-columns: 56px 1fr; gap: 12px; text-align: left; width: 100%; }
+.feed-card:hover { border-color: var(--leaf); }
+.feed-card svg { width: 56px; height: 70px; }
+.feed-card h3 { font-size: 15.5px; font-weight: 600; line-height: 1.4; }
+.feed-card p.sum { font-size: 14px; color: var(--soil-soft); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.feed-card .foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--soil-faint); }
+.like { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 2px 10px; font-size: 13px; color: var(--soil-soft); font-variant-numeric: tabular-nums; }
+.like[aria-pressed="true"] { background: var(--bloom-soft); border-color: transparent; color: var(--bloom); }
+.like svg { width: 14px; height: 14px; }
+.bar { height: 8px; border-radius: 4px; background: var(--grass-0); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--bloom); border-radius: 4px; }
+.lock { position: relative; border: 1px dashed var(--line); border-radius: 16px; padding: 16px; overflow: hidden; }
+.lock .ghost { display: flex; flex-direction: column; gap: 8px; filter: blur(4px); opacity: .6; user-select: none; }
+.lock .ghost i { height: 10px; border-radius: 5px; background: var(--soil-faint); display: block; }
+.lock .over { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 12px; background: color-mix(in srgb, var(--paper) 55%, transparent); }
+.person { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--sprout-soft); color: var(--leaf-deep); font-weight: 600; font-family: var(--font-display); }
+.person b { font-weight: 600; font-size: 15px; }
+.person .tags { gap: 4px; margin-top: 4px; }
+.person .chip { font-size: 12px; padding: 1px 8px; }
+.chip.hit { background: var(--leaf); color: var(--on-leaf); }
+.list { display: flex; flex-direction: column; }
+.list > * + * { border-top: 1px solid var(--line); }
+
+/* ---------- 내 정보 · 포인트 · 관리자 ---------- */
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 11px 0; align-items: center; font-size: 14px; }
+.kv .amt { font-variant-numeric: tabular-nums; font-weight: 600; }
+.kv .amt.plus { color: var(--leaf-deep); }
+.kv .amt.minus { color: var(--soil-soft); }
+.balance { display: flex; align-items: baseline; gap: 6px; }
+.balance b { font-size: 34px; font-family: var(--font-display); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.packs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pack { border: 1px solid var(--line); background: var(--paper); border-radius: 14px; padding: 14px; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.pack[aria-pressed="true"] { border-color: var(--leaf); box-shadow: inset 0 0 0 1px var(--leaf); }
+.pack b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.pack span { font-size: 13px; color: var(--soil-soft); }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat span { font-size: 12px; color: var(--soil-soft); }
+.stat b { font-size: 22px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.stat small { font-size: 12px; color: var(--leaf-deep); }
+.hbar { display: grid; grid-template-columns: 64px 1fr 36px; gap: 8px; align-items: center; font-size: 13px; }
+.hbar .track2 { height: 10px; background: var(--grass-0); border-radius: 5px; overflow: hidden; }
+.hbar .track2 i { display: block; height: 100%; background: var(--leaf); border-radius: 5px; }
+.hbar .track2 i.bloomy { background: var(--bloom); }
+.hbar span:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--soil-soft); }
+.setting { display: grid; grid-template-columns: 1fr 92px; gap: 10px; align-items: center; padding: 8px 0; font-size: 14px; }
+.setting input { height: 38px; text-align: right; padding: 0 10px; }
+
+/* ---------- 시트 · 토스트 · 연출 ---------- */
+.scrim { position: absolute; inset: 0; background: rgba(20, 26, 18, .38); z-index: 30; display: flex; align-items: flex-end; animation: fade .18s ease-out; }
+.sheet { width: 100%; max-height: 88%; overflow-y: auto; background: var(--dew); border-radius: 24px 24px 0 0; padding: 10px 18px calc(22px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 16px; animation: rise .24s cubic-bezier(.2,.7,.2,1); }
+.sheet .grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 2px; }
+.sheet h2 { font-family: var(--font-display); font-size: 21px; line-height: 1.35; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { transform: translateY(30px); opacity: .4; } }
+.toast { position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%); z-index: 50; background: var(--soil); color: var(--dew); padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: calc(100% - 36px); width: max-content; box-shadow: 0 8px 24px -12px rgba(0,0,0,.4); animation: rise .2s ease-out; }
+.celebrate { position: absolute; inset: 0; z-index: 40; background: color-mix(in srgb, var(--dew) 94%, transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; text-align: center; animation: fade .2s; }
+.celebrate .plant { width: 190px; height: 236px; position: relative; }
+.celebrate .plant svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.celebrate .old { animation: out .5s .4s forwards; }
+.celebrate .new { opacity: 0; transform-origin: bottom center; animation: grow-in .8s .7s cubic-bezier(.2,.7,.2,1) forwards; }
+@keyframes out { to { opacity: 0; } }
+.celebrate h2 { font-family: var(--font-display); font-size: 26px; }
+.celebrate .gain { font-weight: 600; color: var(--leaf-deep); background: var(--sprout-soft); border-radius: 999px; padding: 4px 14px; font-size: 14px; }
+.arrange-new { animation: drop-in 1s .2s cubic-bezier(.2,.8,.2,1) both; transform-box: fill-box; }
+@keyframes drop-in { from { transform: translateY(-60px); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+  .celebrate .old { opacity: 0; } .celebrate .new { opacity: 1; }
+}
+</style>
+
+<div class="stage">
+  <aside class="guide" id="guide" aria-label="프로토타입 안내"></aside>
+  <div class="app" id="app">
+    <div class="strip"><span>프로토타입 · 모든 데이터는 예시예요</span><button class="guide-btn" data-action="openGuide">둘러보기 안내</button></div>
+    <div class="view" id="view"></div>
+    <nav class="nav" id="nav" aria-label="주요 메뉴"></nav>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   아이디어 정원 · 베타 프로토타입
+   서버·LLM 없이 화면 흐름을 보여 주는 용도입니다. 정원 신선의 질문은 각본입니다.
+   ===================================================================== */
+(function () {
+"use strict";
+
+/* ---------- 유틸 ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const DAY = 86400000;
+const now = () => Date.now();
+const dkey = (t) => { const d = new Date(t); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+const fmtDate = (t) => { const d = new Date(t); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
+const fmtDateTime = (t) => { const d = new Date(t); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+const relDays = (t) => { const n = Math.floor((startOfDay(now()) - startOfDay(t)) / DAY); return n <= 0 ? "오늘" : n === 1 ? "어제" : `${n}일 전`; };
+function startOfDay(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
+function weekStart(t) { const d = new Date(startOfDay(t)); const wd = (d.getDay() + 6) % 7; return d.getTime() - wd * DAY; } // 월요일 시작
+const uid = () => Math.random().toString(36).slice(2, 9);
+const snip = (s, n = 22) => { s = String(s).replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n) + "…" : s; };
+
+/* ---------- 어휘 ---------- */
+const SKILLS = { frontend: "프론트엔드", backend: "백엔드", mobile: "모바일 앱", "ai-data": "AI·데이터", "ux-design": "UI·UX 디자인", branding: "그래픽·브랜딩", marketing: "마케팅", content: "콘텐츠·글쓰기", video: "영상", hardware: "하드웨어", embedded: "임베디드", fabrication: "기계·제작", planning: "사업 기획", finance: "재무·회계", research: "리서치·인터뷰" };
+const INTERESTS = { campus: "캠퍼스 생활", education: "교육", health: "헬스케어", sustainability: "환경", food: "푸드", mobility: "모빌리티", fintech: "핀테크", social: "소셜·커뮤니티", culture: "문화·엔터", commerce: "커머스", productivity: "생산성", local: "지역·로컬" };
+const UNIS = [
+  { name: "한빛대학교", domain: "hanbit.test" }, { name: "새솔대학교", domain: "saesol.test" },
+  { name: "누리공과대학교", domain: "nuri.test" }, { name: "가람대학교", domain: "garam.test" },
+];
+const CLUB_CODES = { SEED2026: "씨앗창업연합", MAKERS26: "새솔 메이커스" };
+const STAGES = [
+  { n: 1, name: "씨앗", goal: "아이디어 등록" }, { n: 2, name: "새싹", goal: "문제 정의" },
+  { n: 3, name: "줄기", goal: "타깃과 현재 대안" }, { n: 4, name: "꽃봉오리", goal: "해결책과 차별점" },
+  { n: 5, name: "개화", goal: "검증과 비즈니스 모델" },
+];
+const FLOWER_HUES = { campus: "#7b5ea7", productivity: "#5b7fb8", food: "#d0902a", sustainability: "#4f9a74", social: "#c46a8a", education: "#5b7fb8", mobility: "#c46a8a", health: "#4f9a74", commerce: "#d0902a", local: "#7b5ea7", culture: "#c46a8a", fintech: "#5b7fb8" };
+
+/* 단계별 통과 조건 = 정원 신선이 묻는 항목 (다음 단계로 가기 위해 채워야 함) */
+const RUBRIC = {
+  2: { title: "문제 정의", items: [
+    { k: "who", label: "누가 겪는 문제인가", q: "이 불편함을 가장 자주 겪는 사람은 누구인가요? 학년, 전공, 생활 패턴처럼 떠오르는 대로 말해 주세요.", f: "조금 더 좁혀 볼게요. 그중에서도 '이 사람이다' 싶은 한 명을 떠올린다면 어떤 사람인가요?", hint: "예: 시험 기간마다 도서관에서 밤을 새는 3·4학년" },
+    { k: "when", label: "어떤 상황에서 생기는가", q: "그 사람이 이 불편함을 겪는 순간을 장면으로 그려 볼까요? 언제, 어디서, 무엇을 하다가 생기나요?", f: "장면이 아직 흐릿해요. 최근에 실제로 있었던 한 번을 예로 들어 주실 수 있을까요?", hint: "예: 시험 2주 전 평일 오후 1시, 점심 먹고 돌아왔을 때" },
+    { k: "pain", label: "무엇이 불편한가", q: "그 순간 정확히 무엇이 불편한가요? 시간, 돈, 감정 중 무엇을 잃는지도 함께 말해 주세요.", f: "'불편하다'를 조금 쪼개 볼게요. 그 일 때문에 실제로 잃는 것을 숫자나 행동으로 말할 수 있을까요?", hint: "예: 빈자리를 찾느라 20~30분을 쓰고, 결국 카페로 가서 돈을 씀" },
+  ] },
+  3: { title: "타깃과 현재 대안", items: [
+    { k: "target", label: "가장 먼저 쓸 사람", q: "이 서비스를 가장 먼저, 가장 간절하게 쓸 사람은 누구일까요? 처음 100명을 어디서 만날 수 있을지도 생각해 봐요.", f: "범위가 넓어요. 그 100명이 오늘 실제로 모여 있는 곳 한 군데를 꼽는다면요?", hint: "예: 한빛대 중앙도서관 열람실을 매일 쓰는 학생들, 학과 단톡방" },
+    { k: "alt", label: "지금은 어떻게 해결하나", q: "그 사람들은 지금 이 문제를 어떻게 넘기고 있나요? 앱이든 꼼수든 다 좋아요.", f: "실제로 그렇게 하는 걸 보신 적이 있나요? 본 장면이나 들은 말을 하나 알려 주세요.", hint: "예: 가방이나 책으로 자리 맡기, 학교 좌석 예약 키오스크" },
+    { k: "gap", label: "기존 대안의 한계", q: "그 방법들이 충분하지 않은 이유는 무엇인가요? 사람들이 그래도 불만을 갖는 지점을 짚어 주세요.", f: "그 불만이 얼마나 큰지 궁금해요. 사람들이 그 때문에 포기하거나 돈을 쓰는 경우가 있나요?", hint: "예: 키오스크는 연장만 되고 실제로 비었는지 모름, 맡아 둔 자리 때문에 갈등" },
+  ] },
+  4: { title: "해결책과 차별점", items: [
+    { k: "solution", label: "해결책 한 문장", q: "이제 해결책을 한 문장으로 말해 볼까요? '누가, 무엇을 하면, 어떻게 된다'로요.", f: "기능 목록보다 결과가 궁금해요. 이걸 쓰고 나면 그 사람의 하루가 어떻게 달라지나요?", hint: "예: 학생이 도서관 입구에서 앱을 열면 실제로 빈 자리를 바로 보고 예약한다" },
+    { k: "features", label: "핵심 기능 세 가지", q: "그 결과를 만들기 위해 꼭 필요한 기능을 세 가지만 고른다면 무엇인가요?", f: "세 개 중에 하나만 남긴다면 무엇을 남기시겠어요? 그 이유도요.", hint: "예: 실시간 빈자리 지도, 자리 비움 자동 해제, 연장 알림" },
+    { k: "diff", label: "기존 서비스와 다른 점", q: "앞에서 말한 기존 대안과 비교해서, 사람들이 갈아탈 만한 결정적인 차이는 무엇인가요?", f: "그 차이를 사용자가 첫날 바로 느낄 수 있을까요? 느끼는 순간을 묘사해 주세요.", hint: "예: 키오스크는 '예약 상태', 우리는 '실제로 비었는지'를 보여 줌" },
+  ] },
+  5: { title: "검증과 비즈니스 모델", items: [
+    { k: "validate", label: "검증 방법", q: "본격적으로 만들기 전에, 이 아이디어가 맞는지 2주 안에 확인할 수 있는 가장 싼 방법은 무엇일까요?", f: "그 실험에서 무엇을 보면 '맞다'고 판단하실 건가요?", hint: "예: 열람실 한 층에 QR 스티커를 붙이고 구글폼으로 빈자리 공유 테스트" },
+    { k: "metric", label: "성공 기준", q: "그 실험이 성공했다고 말하려면 어떤 숫자가 나와야 할까요?", f: "그 숫자를 고른 이유가 궁금해요. 어떤 근거로 그 정도면 충분하다고 보시나요?", hint: "예: 2주 동안 같은 사람이 3번 이상 다시 쓰는 비율 30% 이상" },
+    { k: "bm", label: "비즈니스 모델", q: "마지막으로, 이 서비스가 계속 굴러가려면 누가 돈을 내야 할까요? 간단해도 괜찮아요.", f: "그 사람이 돈을 낼 이유를 한 문장으로 말해 볼까요?", hint: "예: 학교 도서관과 B2B 계약, 학생은 무료" },
+  ] },
+};
+
+/* 예시 답변 (프로토타입 시연용) */
+const DEMO = {
+  lib: Object.fromEntries(Object.values(RUBRIC).flatMap((r) => r.items).map((it) => [it.k, it.hint.replace(/^예:\s*/, "")])),
+  team: { who: "조별 과제가 많은 경영·디자인 전공 2·3학년, 한 학기에 팀플을 3개 이상 하는 학생", when: "팀이 꾸려진 첫 주, 여섯 명이 단톡방에 시간표 캡처를 하나씩 올릴 때", pain: "가능한 시간을 맞추는 데만 하루 넘게 걸리고, 답 없는 사람 때문에 첫 회의가 일주일씩 밀림" },
+  class: { validate: "공학관 대형 강의실 2곳에 QR 투표 스티커를 붙이고 2주 동안 시범 운영", metric: "수강생 30% 이상이 한 번 이상 투표하고, 조교가 알림을 받은 뒤 10분 안에 조치한 비율 70%", bm: "학교 시설팀과 연간 계약, 학생은 무료로 사용" },
+};
+const demoFor = (i, k) => (DEMO[i.id] && DEMO[i.id][k]) || null;
+
+/* ---------- 정원 신선의 말투 ---------- */
+const OPEN = ["좋아요. 오늘은 '%s'에 집중해 볼게요.", "다시 오셨네요. 이어서 '%s'를 채워 봐요."];
+const ACK = [
+  "「%s」 장면이 또렷해졌어요.",
+  "좋아요, 「%s」라는 답이 다음 질문의 출발점이 되겠네요.",
+  "「%s」, 기억해 둘게요.",
+  "구체적이라 좋아요. 「%s」.",
+];
+const VAGUE = /(그냥|아마|글쎄|잘 모르|모르겠|대충|여러|다양한|모든 사람|누구나)/;
+
+/* ---------- 상태 ---------- */
+const STORE = "idea-garden-proto-v1";
+const SETTINGS = { freePerStage: 6, packSize: 5, packCost: 30, stageUp: 20, weeklyGoal: 30, likeEvery: 10, likeBonus: 10, team: 50, fundingFee: 100, weeklyTarget: 3 };
+
+function seedState() {
+  const t = now();
+  const A = (d, h = 14, m = 3) => { const x = new Date(startOfDay(t) - d * DAY); x.setHours(h, m); return x.getTime(); };
+  const activity = {};
+  // 지난 12주 활동 (예시)
+  for (let d = 83; d >= 1; d--) {
+    const r = Math.sin(d * 1.7) * 0.5 + 0.5;
+    const ws = (new Date(startOfDay(t) - d * DAY).getDay() + 6) % 7;
+    if (r > 0.55 && ws < 6) activity[dkey(t - d * DAY)] = r > 0.9 ? 3 : r > 0.75 ? 2 : 1;
+  }
+  // 이번 주는 이틀 활동한 상태로 시작 → 목표 3회 중 2회
+  for (let d = 0; d < 7; d++) delete activity[dkey(t - d * DAY)];
+  const thisMon = weekStart(t);
+  const daysIn = Math.floor((startOfDay(t) - thisMon) / DAY);
+  const filled = [];
+  for (let d = 0; d < daysIn && filled.length < 2; d++) filled.push(dkey(thisMon + d * DAY));
+  if (filled.length < 2) { const lastWeekDay = dkey(thisMon - DAY); filled.unshift(lastWeekDay); }
+  filled.forEach((k) => (activity[k] = 1));
+
+  const ideas = [
+    {
+      id: "lib", title: "도서관 자리 맡기 문제", body: "시험 기간에 중앙도서관 자리가 가방만 있고 사람은 없는 경우가 너무 많다. 빈자리를 찾느라 30분씩 돌아다닌다.",
+      stage: 2, createdAt: A(16, 23, 41), visibility: "private", category: "campus",
+      answers: {
+        who: "시험 기간에 중앙도서관 열람실을 매일 쓰는 3·4학년 학생들",
+        when: "시험 2주 전 평일 오후, 점심 먹고 돌아왔을 때나 공강에 잠깐 공부하러 갔을 때",
+        pain: "빈자리를 찾느라 20~30분을 돌아다니고, 결국 카페로 가서 음료값 5천 원을 씀. 가방만 있는 자리 때문에 화도 남",
+        target: "한빛대 중앙도서관 3층 열람실을 매일 쓰는 학생들. 학과 단톡방과 도서관 앞에서 만날 수 있음",
+      },
+      freeLeft: 5, paidLeft: 0, chat: [], log: [
+        { at: A(15, 22, 10), stage: 1, conclusions: [["누가 겪나", "시험 기간 도서관을 매일 쓰는 3·4학년"], ["무엇이 불편한가", "빈자리 찾기에 20~30분, 카페 비용"]], organized: 3, open: [] },
+        { at: A(3, 21, 5), stage: 2, conclusions: [["가장 먼저 쓸 사람", "중앙도서관 3층 열람실 상시 이용자"]], organized: 1, open: ["지금은 어떻게 해결하나", "기존 대안의 한계"] },
+      ],
+      seeking: ["frontend", "ux-design"], summary: "", team: [], funding: null, plan: null, likes: 0,
+    },
+    {
+      id: "class", title: "강의실 냉난방 온도 투표", body: "여름엔 에어컨이 너무 세고 겨울엔 너무 덥다. 교수님께 말하기 애매하다.",
+      stage: 4, createdAt: A(30, 13, 20), visibility: "community", category: "campus",
+      answers: { who: "대형 강의실 수업을 듣는 1·2학년", when: "100명 이상 대형 강의, 특히 오후 수업", pain: "춥거나 더워서 집중을 못 하고, 담요나 겉옷을 챙겨야 함", target: "공학관 대형 강의실 수강생", alt: "조교에게 말하거나 그냥 참음", gap: "말하기 눈치 보이고, 한 명 의견이라 바뀌지 않음", solution: "수강생이 앱에서 '춥다/덥다'를 누르면 일정 수 이상일 때 조교에게 알림이 간다", features: "강의실 QR 투표, 임계치 알림, 시간대별 온도 기록", diff: "익명이고 여러 명 의견이 모여서 조교가 바로 움직일 근거가 됨" },
+      freeLeft: 6, paidLeft: 0, chat: [], log: [], seeking: ["backend", "hardware"], summary: "대형 강의실의 온도 불만을 익명 투표로 모아 조교에게 알려 주는 서비스", team: [], funding: null, plan: null, likes: 8,
+    },
+    {
+      id: "share", title: "자취생 식재료 소분 공동구매", body: "대파 한 단, 양파 한 망을 혼자서는 다 못 쓰고 버린다.",
+      stage: 5, createdAt: A(41, 19, 12), visibility: "all", category: "food",
+      answers: { who: "학교 근처 원룸에 사는 자취 2년 차 이상 학생", when: "장 보고 나서 일주일쯤 지나 냉장고를 열었을 때", pain: "한 달에 식재료 1만 원어치 이상을 버리고 죄책감이 듦", target: "후문 원룸촌에 사는 학생, 자취생 커뮤니티 회원", alt: "중고거래 앱 나눔, 소포장 비싸게 구매", gap: "나눔은 시간 맞추기 어렵고 소포장은 비쌈", solution: "같은 건물 자취생끼리 식재료를 함께 사고 공용 냉장 보관함에서 나눠 가져간다", features: "건물별 공구방, 소분 정산, 보관함 픽업 알림", diff: "동네 단위가 아니라 같은 건물 단위라 픽업이 1분 거리", validate: "후문 원룸 2개 건물에서 2주 동안 단톡방 공구 테스트", metric: "참여자 중 2회 이상 재참여 40%", bm: "건당 300원 수수료, 동네 마트 제휴 할인" },
+      freeLeft: 6, paidLeft: 0, chat: [], log: [{ at: A(9, 20, 30), stage: 4, conclusions: [["검증 방법", "원룸 2개 건물 2주 단톡방 테스트"], ["비즈니스 모델", "건당 300원 수수료 + 마트 제휴"]], organized: 3, open: [] }],
+      seeking: ["marketing", "backend"], summary: "같은 건물 자취생끼리 식재료를 함께 사고 나눠 가져가는 소분 공동구매", team: ["p-yoon"], funding: { goal: 1000, raised: 640, backers: 12, endsAt: t + 6 * DAY }, plan: null, likes: 23,
+    },
+    {
+      id: "team", title: "팀플 회의 시간 맞추기", body: "여섯 명 시간표를 맞추느라 단톡방에서 하루가 간다.",
+      stage: 1, createdAt: A(1, 0, 52), visibility: "private", category: "productivity",
+      answers: {}, freeLeft: 6, paidLeft: 0, chat: [], log: [], seeking: [], summary: "", team: [], funding: null, plan: null, likes: 0,
+    },
+  ];
+
+  const people = [
+    { id: "p-yoon", name: "윤하람", uni: "한빛대학교", clubs: ["씨앗창업연합"], skills: ["frontend", "mobile"], bio: "React Native로 앱 두 개 출시해 봤어요." },
+    { id: "p-lee", name: "이줄기", uni: "새솔대학교", clubs: ["씨앗창업연합", "새솔 메이커스"], skills: ["ux-design", "branding"], bio: "Figma 프로토타입과 사용성 테스트를 좋아해요." },
+    { id: "p-park", name: "박봉오리", uni: "누리공과대학교", clubs: ["새솔 메이커스"], skills: ["hardware", "embedded", "fabrication"], bio: "아두이노·라즈베리파이, 3D 프린터를 다뤄요." },
+    { id: "p-choi", name: "최개화", uni: "가람대학교", clubs: [], skills: ["marketing", "content", "finance"], bio: "인스타 계정을 팔로워 3천까지 키워 봤어요." },
+    { id: "p-han", name: "한바람", uni: "한빛대학교", clubs: [], skills: ["backend", "ai-data"], bio: "데이터 파이프라인과 추천 모델 프로젝트 경험." },
+    { id: "p-seo", name: "서이슬", uni: "한빛대학교", clubs: ["씨앗창업연합"], skills: ["ux-design", "research"], bio: "인터뷰 30명 진행해 본 UX 리서치 덕후." },
+  ];
+
+  const feed = [
+    { id: "f1", title: "강의 녹음 자동 요약 노트", summary: "녹음 파일을 올리면 교수님 강조 포인트만 뽑아 시험 대비 노트를 만들어 줘요.", author: "한바람", uni: "한빛대학교", community: true, stage: 5, category: "education", likes: 41, createdAt: A(22, 9, 14), seeking: ["ai-data", "frontend"], funding: { goal: 800, raised: 310, backers: 7, endsAt: t + 9 * DAY } },
+    { id: "f2", title: "따릉이 대신 캠퍼스 킥보드 반납 지도", summary: "언덕 많은 캠퍼스에서 어디에 반납해야 다음 사람이 편한지 알려 주는 지도.", author: "이줄기", uni: "새솔대학교", community: true, stage: 4, category: "mobility", likes: 17, createdAt: A(12, 16, 40), seeking: ["mobile"] },
+    { id: "f3", title: "자취방 전기요금 미리보기 플러그", summary: "콘센트에 꽂으면 이번 달 전기요금을 미리 알려 주는 스마트 플러그.", author: "박봉오리", uni: "누리공과대학교", community: true, stage: 5, category: "sustainability", likes: 29, createdAt: A(35, 22, 3), seeking: ["hardware", "marketing"], approved: true, detail: "문제: 누진제 구간을 넘어서야 요금 폭탄을 알게 됨.\n해결: 측정 플러그 + 앱에서 예상 요금과 구간 경고.\n검증: 원룸 10곳 2주 시범 설치.\n모델: 기기 판매 + 공동구매." },
+    { id: "f4", title: "동아리 회비 정산 봇", summary: "단톡방에 영수증 사진만 올리면 회비 장부와 정산 요청을 자동으로 만들어요.", author: "최개화", uni: "가람대학교", community: false, stage: 4, category: "fintech", likes: 12, createdAt: A(8, 11, 25), seeking: ["backend"] },
+    { id: "f5", title: "혼밥 메이트 학식 알림", summary: "같은 시간에 학식 먹을 사람을 학과 단위로 조용히 이어 줘요.", author: "서이슬", uni: "한빛대학교", community: true, stage: 5, category: "social", likes: 36, createdAt: A(27, 12, 1), seeking: ["mobile", "ux-design"] },
+    { id: "f6", title: "시험기간 24시 열람실 혼잡도", summary: "학교 와이파이 접속 수로 열람실 혼잡도를 추정해 보여 줘요.", author: "윤하람", uni: "한빛대학교", community: true, stage: 3, category: "campus", likes: 9, createdAt: A(5, 1, 30), seeking: [] },
+  ];
+
+  const requests = [
+    { id: uid(), kind: "team", ideaId: "share", from: "p-choi", note: "마케팅이랑 정산 구조를 같이 고민해 보고 싶어요. 공구 운영 경험이 있어요.", status: "pending", at: A(1, 18, 20) },
+    { id: uid(), kind: "view", ideaId: "class", from: "p-park", note: "온도 센서를 붙여 보면 좋을 것 같아서 상세 내용이 궁금해요.", status: "pending", at: A(0, 9, 40) },
+  ];
+
+  const tx = [
+    { at: A(41, 19, 12), amount: 100, reason: "가입 환영 포인트" },
+    { at: A(20, 9, 0), amount: 30, reason: "주간 목표 달성" },
+    { at: A(13, 9, 0), amount: 30, reason: "주간 목표 달성" },
+    { at: A(9, 20, 40), amount: 20, reason: "단계 상승 · 자취생 식재료 소분 공동구매 개화" },
+    { at: A(8, 10, 0), amount: -100, reason: "펀딩 등록 · 자취생 식재료 소분 공동구매" },
+    { at: A(6, 15, 0), amount: 50, reason: "팀 결성 · 자취생 식재료 소분 공동구매" },
+    { at: A(4, 21, 30), amount: 10, reason: "공감 20개 보너스 · 자취생 식재료 소분 공동구매" },
+    { at: A(2, 13, 10), amount: -10, reason: "응원 · 자취방 전기요금 미리보기 플러그" },
+  ];
+
+  return {
+    v: 1, signedIn: false, route: { name: "landing" }, settings: { ...SETTINGS },
+    user: { name: "김새싹", email: "sprout@hanbit.test", uni: "한빛대학교", clubs: ["씨앗창업연합"], interests: ["campus", "productivity"], skills: ["frontend", "backend"], note: "Next.js로 동아리 홈페이지를 두 번 만들어 봤어요." },
+    activity, ideas, people, feed, requests, tx, liked: {}, sentRequests: {}, goalAwarded: { [weekStart(t)]: false },
+    draft: {}, feedTab: "community", feedCat: "all",
+  };
+}
+
+let S;
+function load() {
+  try { const raw = localStorage.getItem(STORE); if (raw) { const s = JSON.parse(raw); if (s && s.v === 1) return s; } } catch (e) {}
+  return seedState();
+}
+function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
+S = load();
+
+const balance = () => S.tx.reduce((a, b) => a + b.amount, 0);
+const idea = (id) => S.ideas.find((i) => i.id === id);
+const person = (id) => S.people.find((p) => p.id === id);
+function addTx(amount, reason) { S.tx.push({ at: now(), amount, reason }); }
+
+/* ---------- 식물 그림 ---------- */
+const LEAF = "M0 0 C 6 -7.5, 17 -8, 24 0 C 17 8, 6 7.5, 0 0 Z";
+function leaf(x, y, a, s = 1, tone = "#3f6b3a") { return `<g transform="translate(${x} ${y}) rotate(${a}) scale(${s})"><path d="${LEAF}" fill="${tone}"/><path d="M2 0 L 20 0" stroke="#cfe3b5" stroke-width=".9" stroke-linecap="round" opacity=".7"/></g>`; }
+function stem(top, c = 0) { return `<path d="M60 104 C ${60 + c} ${104 - (104 - top) * 0.4}, ${60 - c} ${top + (104 - top) * 0.35}, 60 ${top}" stroke="#2c4f2a" stroke-width="3" stroke-linecap="round" fill="none"/>`; }
+const POT = `<path d="M30 112 L90 112 L84 146 Q83 149 80 149 L40 149 Q37 149 36 146 Z" fill="#9a7552"/><rect x="26" y="103" width="68" height="11" rx="3" fill="#9a7552"/><rect x="26" y="103" width="68" height="3" rx="1.5" fill="#b69373"/><ellipse cx="60" cy="104" rx="30" ry="3.5" fill="#5b4433"/>`;
+function flowerShape(color, r = 1) {
+  const p = [0, 72, 144, 216, 288].map((a) => `<path d="M0 0 C -9 -6, -9 -19, 0 -22 C 9 -19, 9 -6, 0 0 Z" fill="${color}" stroke="rgba(0,0,0,.18)" stroke-width=".8" transform="rotate(${a})"/>`).join("");
+  const v = [0, 72, 144, 216, 288].map((a) => `<path d="M0 -3 L0 -17" stroke="rgba(255,255,255,.35)" stroke-width="1" transform="rotate(${a})"/>`).join("");
+  return `<g transform="scale(${r})">${p}${v}<circle r="4.2" fill="#e9c46a"/><circle r="1.6" fill="#c99a2e"/></g>`;
+}
+function budShape(color) { return `<path d="M0 -24 C 10 -16, 10 -4, 0 0 C -10 -4, -10 -16, 0 -24 Z" fill="${color}"/><path d="M0 -22 C 3 -14, 3 -6, 0 -1" stroke="rgba(255,255,255,.3)" stroke-width="1.2" fill="none"/><path d="M0 0 C -6 -1, -9 -5, -8 -9 C -5 -5, -2 -3, 0 0 Z" fill="#3f6b3a"/><path d="M0 0 C 6 -1, 9 -5, 8 -9 C 5 -5, 2 -3, 0 0 Z" fill="#3f6b3a"/>`; }
+function plant(stage, { color = "#7b5ea7", label } = {}) {
+  let g = "";
+  if (stage === 1) g = `<ellipse cx="60" cy="97.5" rx="8.5" ry="5.6" fill="#7a5a3a" transform="rotate(-18 60 97.5)"/><path d="M54.5 96 Q59 93.4 64 94.6" stroke="#b08a63" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
+  if (stage === 2) g = stem(82, 2) + leaf(60, 83, -150, 0.75, "#5c8a4f") + leaf(60, 83, -30, 0.75, "#5c8a4f");
+  if (stage === 3) g = stem(46, 5) + leaf(60, 92, -160, 0.9) + leaf(60, 78, -25, 1) + leaf(60, 64, -155, 0.85) + leaf(60, 50, -35, 0.7, "#5c8a4f") + leaf(60, 47, -140, 0.55, "#5c8a4f");
+  if (stage === 4) g = stem(46, 4) + leaf(60, 94, -160, 0.95) + leaf(60, 80, -22, 1.05) + leaf(60, 66, -155, 0.85) + `<g transform="translate(60 46)">${budShape(color)}</g>`;
+  if (stage === 5) g = stem(46, 4) + leaf(60, 94, -160, 0.95) + leaf(60, 80, -22, 1.05) + leaf(60, 66, -155, 0.85) + `<g transform="translate(60 34)">${flowerShape(color)}</g>`;
+  return `<svg viewBox="0 0 120 152" role="img" aria-label="${esc(label ?? STAGES[stage - 1].name)}">${g}${POT}</svg>`;
+}
+const SAGE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--sprout-soft)"/><path d="M12 19v-6" stroke="var(--leaf-deep)" stroke-width="1.8" stroke-linecap="round"/><path d="M12 13c0-3.4-2.4-5.5-6-5.5 0 3.4 2.4 5.5 6 5.5Z" fill="#5c8a4f"/><path d="M12 11.5c0-3 2.2-5 5.5-5 0 3.1-2.3 5-5.5 5Z" fill="var(--leaf)"/></svg>`;
+const WORDMARK = `<span class="wordmark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 12C12 7 8.5 4.5 4 4.5 4 9 7 12 12 12Z" fill="#5c8a4f"/><path d="M12 10C12 6 14.8 3.5 20 3.5 20 7.8 17 10 12 10Z" fill="currentColor"/></svg>아이디어 정원</span>`;
+const BACK = (to) => `<button class="back" data-action="go" data-to="${to}" aria-label="뒤로"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>`;
+const HEART = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" fill="currentColor"/></svg>`;
+const CHECK = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+
+/* ---------- 라우팅 ---------- */
+const view = $("#view");
+const nav = $("#nav");
+function go(name, params = {}) { S.route = { name, ...params }; save(); render(true); }
+function render(scrollTop) {
+  const r = S.route;
+  const fn = SCREENS[r.name] || SCREENS.garden;
+  view.innerHTML = fn(r);
+  const navOn = { garden: "garden", seed: "garden", log: "garden", plan: "garden", feed: "feed", feedDetail: "feed", me: "me", points: "me", charge: "me", requests: "me", admin: "me" }[r.name];
+  nav.hidden = !navOn;
+  nav.innerHTML = navOn ? [
+    ["garden", "나의 정원", '<path d="M12 20v-7m0 0c0-4-3-6.5-7-6.5 0 4 3 6.5 7 6.5Zm0-2c0-3.6 2.6-6 7-6 0 3.8-2.8 6-7 6ZM5 20h14"/>'],
+    ["feed", "공개 정원", '<path d="M8 21h8M9 21l-1-6h8l-1 6M12 15V8m0 0c0-2.5-2-4-4.5-4 0 2.5 2 4 4.5 4Zm0 0c0-2.5 2-4 4.5-4 0 2.5-2 4-4.5 4ZM8 15c-1.5-1-2.5-3-2.5-5M16 15c1.5-1 2.5-3 2.5-5"/>'],
+    ["me", "내 정보", '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8c.8-3.4 3.6-5.5 7-5.5s6.2 2.1 7 5.5"/>'],
+  ].map(([k, l, p]) => `<button data-action="go" data-to="${k}" ${navOn === k ? 'aria-current="page"' : ""}><svg viewBox="0 0 24 24">${p}</svg>${l}</button>`).join("") : "";
+  if (scrollTop) view.scrollTop = 0;
+  if (r.name === "chat") { const b = $(".chat-body", view); if (b) b.scrollTop = b.scrollHeight; }
+  renderGuide();
+}
+
+/* ---------- 화면들 ---------- */
+const SCREENS = {};
+
+SCREENS.landing = () => `
+  <div class="view-inner" style="gap:28px">
+    <div class="topbar">${WORDMARK}<button class="link-btn" data-action="demoLogin" style="font-size:14px">로그인</button></div>
+    <section class="hero" style="margin-top:18px">
+      <h1>불편했던 순간을<br>씨앗으로 심어 두세요</h1>
+      <p>정원 신선이 한 번에 하나씩 묻습니다. 답하다 보면 생각이 자라 기획서가 되고, 함께할 사람을 만나게 됩니다.</p>
+    </section>
+    <section aria-label="아이디어가 자라는 다섯 단계" class="stack" style="gap:8px">
+      <ol class="stage-row" style="list-style:none;margin:0;padding:0 0 2px">${STAGES.map((s, i) => `<li class="grow-in" style="animation-delay:${120 + i * 130}ms">${plant(s.n)}</li>`).join("")}</ol>
+      <ol class="stage-names" style="list-style:none;margin:0;padding:0">${STAGES.map((s) => `<li><b style="${s.n === 5 ? "color:var(--bloom)" : ""}">${s.name}</b><span>${s.goal}</span></li>`).join("")}</ol>
+    </section>
+    <section class="stack">
+      <button class="btn primary full" data-action="go" data-to="signup">학교 이메일로 시작하기</button>
+      <button class="btn quiet full" data-action="demoLogin">예시 계정으로 둘러보기</button>
+      <p class="faint">베타 참여 학교: ${UNIS.map((u) => u.name).join(", ")}</p>
+    </section>
+    <p class="display" style="color:var(--leaf-deep);margin-top:8px">죽은 아이디어를 줄이자.</p>
+  </div>`;
+
+SCREENS.signup = () => {
+  const d = S.draft.signup || {};
+  const m = matchUni(d.email || "");
+  const typed = (d.email || "").includes("@") && (d.email || "").split("@")[1].includes(".");
+  return `
+  <div class="view-inner">
+    <div class="topbar"><div class="left">${BACK("landing")}<h1>학교 이메일로 가입</h1></div></div>
+    <p class="muted">인증 메일의 링크를 누르면 가입이 끝나요. 학교 커뮤니티에는 자동으로 소속됩니다.</p>
+    <form class="stack" style="gap:18px" data-form="signup" novalidate>
+      <div class="field"><label for="su-name">이름</label><input class="input" id="su-name" name="name" maxlength="30" value="${esc(d.name || "")}" autocomplete="name"><span class="hint">팀원들에게 보이는 이름이에요.</span></div>
+      <div class="field"><label for="su-email">학교 이메일</label><input class="input" id="su-email" name="email" type="email" inputmode="email" placeholder="you@hanbit.test" value="${esc(d.email || "")}" data-live="signupEmail">
+        <span class="hint" id="su-email-hint" style="${typed && m ? "color:var(--leaf-deep)" : typed ? "color:var(--danger)" : ""}">${typed ? (m ? `${m.name} 커뮤니티에 자동으로 소속돼요.` : "베타 참여 대학의 학교 이메일만 가입할 수 있어요.") : "예: you@hanbit.test, you@saesol.test"}</span></div>
+      <div class="field"><label for="su-pw">비밀번호</label><input class="input" id="su-pw" name="pw" type="password" autocomplete="new-password"><span class="hint">8자 이상</span></div>
+      <p class="hint" id="su-error" style="color:var(--danger)" hidden></p>
+      <button class="btn primary full" type="submit">인증 메일 받기</button>
+    </form>
+  </div>`;
+};
+
+SCREENS.verify = () => `
+  <div class="view-inner" style="text-align:center;align-items:center">
+    <div style="width:150px;margin-top:24px">${plant(1, { label: "화분에 심긴 씨앗" })}</div>
+    <h1 class="display" style="font-size:24px">인증 메일을 보냈어요</h1>
+    <p class="muted"><b style="color:var(--soil);font-weight:500">${esc(S.draft.signup?.email || "")}</b>로 보낸 메일의 링크를 누르면 가입이 끝나요.</p>
+    <div class="panel" style="width:100%;text-align:left;display:flex;flex-direction:column;gap:10px">
+      <span class="faint">메일함 미리보기 (프로토타입)</span>
+      <b class="display" style="font-size:17px">[아이디어 정원] 학교 이메일을 인증해 주세요</b>
+      <button class="btn primary" data-action="verify">이메일 인증하기</button>
+    </div>
+  </div>`;
+
+SCREENS.onboarding = () => {
+  const d = S.draft.onb || { interests: [], skills: [] };
+  const editing = !!S.draft.editing;
+  return `
+  <div class="view-inner">
+    ${editing ? `<div class="topbar"><div class="left">${BACK("me")}<h1>프로필 수정</h1></div></div>` : `
+    <div style="display:grid;grid-template-columns:84px 1fr;gap:12px;align-items:end">${plant(1)}<div><h1 class="display" style="font-size:22px">정원을 꾸밀 준비가 됐어요</h1><p class="faint">프로필은 같은 커뮤니티 사람들에게만 보여요.</p></div></div>
+    <div class="notice">${esc(S.user.uni)} 커뮤니티에 소속됐어요.</div>`}
+    <div class="field"><span class="label">관심 분야</span><span class="hint">공개 정원에서 이 분야 아이디어를 먼저 보여 드려요.</span>
+      <div class="tags">${Object.entries(INTERESTS).map(([k, l]) => `<button class="tag-toggle" data-action="toggleOnb" data-kind="interests" data-k="${k}" aria-pressed="${d.interests.includes(k)}">${l}</button>`).join("")}</div></div>
+    <div class="field"><span class="label">내 역량</span><span class="hint">팀원을 찾는 사람에게 추천될 때 쓰여요.</span>
+      <div class="tags">${Object.entries(SKILLS).map(([k, l]) => `<button class="tag-toggle" data-action="toggleOnb" data-kind="skills" data-k="${k}" aria-pressed="${d.skills.includes(k)}">${l}</button>`).join("")}</div></div>
+    <div class="field"><label for="onb-code">${editing ? "동아리 추가 (초대 코드)" : "창업 동아리 초대 코드 (선택)"}</label><input class="input" id="onb-code" style="text-transform:uppercase;letter-spacing:.08em" placeholder="SEED2026" value="${esc(d.code || "")}" data-live="onbCode"><span class="hint">예시 코드: SEED2026 (씨앗창업연합), MAKERS26 (새솔 메이커스)</span></div>
+    <button class="btn primary full" data-action="finishOnb">${editing ? "저장하기" : "정원으로 가기"}</button>
+  </div>`;
+};
+
+SCREENS.garden = () => {
+  const wk = weekCount();
+  const target = S.settings.weeklyTarget;
+  const done = Math.min(wk, target);
+  const C = 2 * Math.PI * 26;
+  const welcome = S.route.welcome;
+  return `
+  <div class="view-inner">
+    <div class="topbar">
+      <div><p class="faint" style="font-size:14px">${esc(S.user.name)}님의</p><h1 class="display" style="font-size:27px;line-height:1.2">나의 정원</h1></div>
+      <button class="points-chip" data-action="go" data-to="points"><i></i>${balance()}P</button>
+    </div>
+    ${welcome ? `<div class="notice">프로필을 만들었어요. 아래 예시 씨앗들을 눌러 보거나 첫 씨앗을 심어 보세요.</div>` : ""}
+    <section class="panel stack" aria-label="주간 목표">
+      <div class="goal">
+        <svg class="goal-ring" viewBox="0 0 64 64" role="img" aria-label="이번 주 ${wk}회 중 목표 ${target}회">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="var(--grass-0)" stroke-width="7"/>
+          <circle cx="32" cy="32" r="26" fill="none" stroke="var(--leaf)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(C * done) / target} ${C}" transform="rotate(-90 32 32)"/>
+          <text x="32" y="37" text-anchor="middle">${wk}/${target}</text>
+        </svg>
+        <div><b style="font-weight:600">${wk >= target ? "이번 주 목표를 채웠어요" : `이번 주 ${target - wk}번 더 가꾸면 목표 달성`}</b>
+        <p class="faint">씨앗을 심거나 신선과 대화한 날을 셉니다. 달성하면 ${S.settings.weeklyGoal}P</p></div>
+      </div>
+      ${grass()}
+    </section>
+    <section class="stack">
+      <h2 class="sec-title">내 씨앗 <small>${S.ideas.length}개</small></h2>
+      <div class="beds">
+        <button class="pot-card new" data-action="openPlant"><span class="plus" aria-hidden="true">+</span><b>씨앗 심기</b><span class="faint">30초면 충분해요</span></button>
+        ${[...S.ideas].sort((a, b) => b.createdAt - a.createdAt).map((i) => `
+          <button class="pot-card" data-action="go" data-to="seed" data-id="${i.id}">
+            ${plant(i.stage, { color: FLOWER_HUES[i.category] || "#7b5ea7", label: `${STAGES[i.stage - 1].name} 단계` })}
+            <span class="t">${esc(i.title)}</span>
+            <span class="s"><span>${STAGES[i.stage - 1].name}</span><span>${relDays(lastTouched(i))}</span></span>
+          </button>`).join("")}
+      </div>
+    </section>
+  </div>`;
+};
+
+SCREENS.seed = (r) => {
+  const i = idea(r.id); if (!i) return SCREENS.garden();
+  const tab = r.tab || "grow";
+  const next = i.stage + 1;
+  const ru = RUBRIC[next];
+  const color = FLOWER_HUES[i.category] || "#7b5ea7";
+  return `
+  <div class="view-inner">
+    <div class="topbar"><div class="left">${BACK("garden")}</div><span class="chip ${i.visibility === "private" ? "plain" : ""}">${{ private: "비공개", community: "내 커뮤니티 공개", all: "전체 공개" }[i.visibility]}</span></div>
+    <section class="idea-hero">${plant(i.stage, { color })}<div class="stack" style="gap:6px"><span class="chip ${i.stage === 5 ? "bloom" : ""}" style="align-self:flex-start">${STAGES[i.stage - 1].name}</span><h1>${esc(i.title)}</h1><p class="meta">처음 심은 날 ${fmtDateTime(i.createdAt)} · ${esc(S.user.name)}</p></div></section>
+    <div class="track" aria-label="성장 단계">${STAGES.map((s) => `<div ${s.n <= i.stage ? "data-on" : ""} ${s.n === next ? "data-now" : ""} ${s.n === 5 ? "data-bloom" : ""}>${s.name}</div>`).join("")}</div>
+    <div class="tabs" role="tablist">${[["grow", "키우기"], ["log", `성장 일지 ${i.log.length}`], ["share", "공유·팀"]].map(([k, l]) => `<button role="tab" aria-selected="${tab === k}" data-action="tab" data-id="${i.id}" data-tab="${k}">${l}</button>`).join("")}</div>
+    ${tab === "grow" ? seedGrow(i, ru, next) : tab === "log" ? seedLog(i) : seedShare(i)}
+  </div>`;
+};
+
+function seedGrow(i, ru, next) {
+  const body = `<p class="muted" style="font-size:14px;white-space:pre-line">${esc(i.body)}</p>`;
+  if (i.stage === 5) {
+    return `${body}
+      <div class="panel stack" style="border-color:var(--bloom)">
+        <b class="display" style="font-size:19px">꽃이 피었어요</b>
+        <p class="muted" style="font-size:14px">성장 일지와 대화에서 모인 내용으로 기획서를 만들 수 있어요. 만든 뒤에도 직접 고칠 수 있어요.</p>
+        <button class="btn bloom full" data-action="go" data-to="plan" data-id="${i.id}">${i.plan ? "기획서 열기" : "기획서 만들기"}</button>
+        <button class="btn quiet full" data-action="tab" data-id="${i.id}" data-tab="share">공유하고 꽃꽂이에 올리기</button>
+      </div>`;
+  }
+  const filled = ru.items.filter((it) => i.answers[it.k]).length;
+  const credits = i.freeLeft + i.paidLeft;
+  return `${body}
+    <section class="panel stack">
+      <h2 class="sec-title">${STAGES[next - 1].name}이 되려면 <small>${ru.title} · ${filled}/${ru.items.length}</small></h2>
+      <ul class="checklist">${ru.items.map((it) => `<li><span class="check" ${i.answers[it.k] ? "data-ok" : ""}>${i.answers[it.k] ? CHECK : ""}</span><div><b>${it.label}</b><p>${i.answers[it.k] ? esc(snip(i.answers[it.k], 60)) : "아직 이야기하지 않았어요"}</p></div></li>`).join("")}</ul>
+      <div class="divider"></div>
+      <div class="quota"><span>이 단계 무료 질문 ${i.freeLeft}/${S.settings.freePerStage}${i.paidLeft ? ` · 추가 질문 ${i.paidLeft}개` : ""}</span><span class="dots" aria-hidden="true">${Array.from({ length: S.settings.freePerStage }, (_, k) => `<i ${k >= i.freeLeft ? "data-used" : ""}></i>`).join("")}</span></div>
+      <button class="btn primary full" data-action="go" data-to="chat" data-id="${i.id}">정원 신선과 이야기하기</button>
+      ${credits === 0 ? `<p class="faint">무료 질문을 다 썼어요. 대화를 열면 포인트로 질문을 더 받을 수 있어요.</p>` : ""}
+    </section>`;
+}
+
+function seedLog(i) {
+  if (!i.log.length) return `<div class="empty"><p>아직 성장 일지가 없어요.</p><p class="faint">신선과 대화하고 "오늘은 여기까지"를 누르면 그날의 결론이 여기에 쌓여요.</p></div>`;
+  return `<div class="log">${[...i.log].reverse().map((e) => `
+    <article class="log-entry">
+      <h3>${fmtDateTime(e.at)} · ${STAGES[e.stage - 1].name} 단계</h3>
+      <dl>
+        <dt>오늘 나온 결론</dt><dd>${e.conclusions.length ? `<ul>${e.conclusions.map(([l, a]) => `<li><b style="font-weight:500">${esc(l)}</b>: ${esc(a)}</li>`).join("")}</ul>` : "새로 정해진 내용은 없어요"}</dd>
+        <dt>새로 정리된 항목</dt><dd>${e.organized}개</dd>
+        <dt>아직 남은 질문</dt><dd>${e.open.length ? e.open.map(esc).join(", ") : "없음. 단계 판정을 받아 보세요"}</dd>
+      </dl>
+    </article>`).join("")}</div><p class="faint">모든 일지에 작성자와 작성 시각이 남아, 누가 먼저 제안했는지 확인할 수 있어요.</p>`;
+}
+
+function seedShare(i) {
+  const vis = i.visibility;
+  const recs = recommend(i).slice(0, 4);
+  const canFund = i.stage === 5;
+  const draftSummary = i.summary || sageSummaryDraft(i);
+  return `
+    <section class="stack">
+      <h2 class="sec-title">공개 범위</h2>
+      <div class="stack" style="gap:8px" role="radiogroup" aria-label="공개 범위">
+        ${[["private", "비공개", "나만 볼 수 있어요"], ["community", "내 커뮤니티 공개", `${S.user.uni}${S.user.clubs.length ? ", " + S.user.clubs.join(", ") : ""}`], ["all", "전체 공개", "베타에 참여한 모든 학교"]].map(([k, l, h]) => `
+          <button class="pack" role="radio" aria-checked="${vis === k}" aria-pressed="${vis === k}" data-action="setVis" data-id="${i.id}" data-v="${k}" style="flex-direction:row;justify-content:space-between;align-items:center"><span><b style="font-size:15px;font-weight:600">${l}</b><br><span>${esc(h)}</span></span><span class="check" ${vis === k ? "data-ok" : ""}>${vis === k ? CHECK : ""}</span></button>`).join("")}
+      </div>
+      <p class="faint">공개해도 처음엔 요약만 보여요. 상세 내용은 내가 승인한 사람에게만 열려요.</p>
+    </section>
+    <section class="field">
+      <label for="sum-${i.id}">공개 요약</label>
+      <textarea class="textarea" id="sum-${i.id}" data-live="summary" data-id="${i.id}" maxlength="120" style="min-height:76px">${esc(draftSummary)}</textarea>
+      <span class="hint">${i.summary ? "공개 정원에 이 문장이 보여요." : "신선이 쓴 초안이에요. 내 말로 고쳐 주세요."}</span>
+    </section>
+    <section class="stack" style="gap:8px">
+      <h2 class="sec-title">찾는 역량</h2>
+      <div class="tags">${Object.entries(SKILLS).map(([k, l]) => `<button class="tag-toggle" data-action="toggleSeek" data-id="${i.id}" data-k="${k}" aria-pressed="${i.seeking.includes(k)}">${l}</button>`).join("")}</div>
+    </section>
+    <button class="btn ${i.stage === 5 ? "bloom" : "primary"} full" data-action="publish" data-id="${i.id}" ${vis === "private" ? "disabled" : ""}>${vis === "private" ? "공개 범위를 먼저 정해 주세요" : i.stage === 5 ? "꽃꽂이에 올리기" : "공개 정원에 올리기"}</button>
+    <section class="stack" style="gap:4px">
+      <h2 class="sec-title">추천 팀원 <small>찾는 역량 · 같은 커뮤니티 우선</small></h2>
+      ${i.seeking.length ? `<div class="list">${recs.map((p) => personRow(p, i)).join("")}</div>` : `<p class="faint">찾는 역량을 고르면 맞는 사람을 추천해 드려요.</p>`}
+    </section>
+    <section class="stack" style="gap:4px">
+      <h2 class="sec-title">팀 <small>${i.team.length + 1}명</small></h2>
+      <div class="list">
+        <div class="person"><span class="avatar">${esc(S.user.name[0])}</span><div><b>${esc(S.user.name)}</b><div class="faint">작성자 · ${esc(S.user.uni)}</div></div><span></span></div>
+        ${i.team.map((pid) => { const p = person(pid); return `<div class="person"><span class="avatar">${esc(p.name[0])}</span><div><b>${esc(p.name)}</b><div class="tags">${p.skills.map((s) => `<span class="chip plain">${SKILLS[s]}</span>`).join("")}</div></div><span class="chip">팀원</span></div>`; }).join("")}
+      </div>
+    </section>
+    <section class="panel stack">
+      <h2 class="sec-title">아이디어 펀딩 <small>가상 포인트</small></h2>
+      ${i.funding ? fundingBlock(i.funding) : canFund ? `<p class="muted" style="font-size:14px">개화한 아이디어만 등록할 수 있어요. 등록할 때 ${S.settings.fundingFee}P가 쓰여요.</p><button class="btn quiet full" data-action="openFund" data-id="${i.id}">펀딩 등록하기</button>` : `<p class="faint">개화 단계가 되면 펀딩을 등록할 수 있어요.</p>`}
+    </section>`;
+}
+
+function personRow(p, i) {
+  const same = sameCommunity(p);
+  return `<div class="person"><span class="avatar">${esc(p.name[0])}</span><div style="min-width:0"><b>${esc(p.name)}</b> <span class="faint">${esc(p.uni)}</span>
+    <div class="tags">${p.skills.map((s) => `<span class="chip ${i.seeking.includes(s) ? "hit" : "plain"}">${SKILLS[s]}</span>`).join("")}${same ? `<span class="chip bloom">같은 커뮤니티</span>` : ""}</div></div>
+    <button class="btn quiet small" data-action="openPerson" data-pid="${p.id}">프로필</button></div>`;
+}
+function fundingBlock(f) {
+  const pct = Math.min(100, Math.round((f.raised / f.goal) * 100));
+  const left = Math.max(0, Math.ceil((f.endsAt - now()) / DAY));
+  return `<div class="stack" style="gap:8px"><div class="row" style="justify-content:space-between"><b style="font-variant-numeric:tabular-nums">${f.raised.toLocaleString()}P <span class="faint" style="font-weight:400">/ ${f.goal.toLocaleString()}P</span></b><span class="chip bloom">${pct}%</span></div>
+    <div class="bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+    <p class="faint">응원 ${f.backers}명 · ${left}일 남음 · 실제 돈은 오가지 않아요</p></div>`;
+}
+
+SCREENS.chat = (r) => {
+  const i = idea(r.id); if (!i) return SCREENS.garden();
+  ensureChatStarted(i);
+  const next = i.stage + 1;
+  const ru = RUBRIC[next];
+  const filled = ru ? ru.items.filter((it) => i.answers[it.k]).length : 0;
+  const pending = i.pending;
+  const pendItem = pending && ru ? ru.items.find((it) => it.k === pending.k) : null;
+  return `
+  <div class="chat-view">
+    <div class="chat-head">
+      <div class="topbar"><div class="left">${BACK("seed")}<div style="min-width:0"><b style="display:block;font-weight:600;line-height:1.3">${esc(snip(i.title, 18))}</b><span class="faint">${STAGES[i.stage - 1].name} → ${ru ? STAGES[next - 1].name : "개화"} · ${ru ? ru.title : ""} ${filled}/${ru ? ru.items.length : 0}</span></div></div>
+        ${ru ? `<button class="btn quiet small" data-action="askNextStage" data-id="${i.id}">다음 단계로</button>` : ""}</div>
+      <div class="quota"><span>남은 무료 질문 <b style="color:var(--soil)">${i.freeLeft}</b>${i.paidLeft ? ` · 추가 질문 ${i.paidLeft}` : ""}</span><span class="dots" aria-hidden="true">${Array.from({ length: S.settings.freePerStage }, (_, k) => `<i ${k >= i.freeLeft ? "data-used" : ""}></i>`).join("")}</span></div>
+    </div>
+    <div class="chat-body" id="chat-body" aria-live="polite">${i.chat.map((m) => msgHtml(m, i)).join("")}</div>
+    <div class="chat-foot">
+      ${pendItem ? `<div class="row" style="justify-content:space-between"><span class="faint">답하기 어렵다면</span><button class="link-btn" data-action="hint" data-id="${i.id}">${demoFor(i, pending.k) ? "예시 답변 넣기" : "답변 예시 보기"}</button></div>` : ""}
+      <form class="composer" data-form="chat" data-id="${i.id}">
+        <textarea class="textarea" id="chat-input" name="msg" rows="1" placeholder="${pendItem ? "생각나는 대로 답해 주세요" : "신선에게 할 말을 적어 주세요"}" aria-label="답변">${esc(S.draft["chat-" + i.id] || "")}</textarea>
+        <button class="send" type="submit" aria-label="보내기"><svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+      </form>
+      <div class="foot-actions"><button class="link-btn" data-action="endSession" data-id="${i.id}">오늘은 여기까지 (요약 저장)</button><span class="faint">한 번에 질문 하나씩</span></div>
+    </div>
+  </div>`;
+};
+
+function msgHtml(m, i) {
+  if (m.role === "me") return `<div class="msg me">${esc(m.text)}</div>`;
+  if (m.role === "note") return `<div class="msg note">${esc(m.text)}</div>`;
+  if (m.role === "typing") return `<div class="typing" aria-label="신선이 생각 중"><i></i><i></i><i></i></div>`;
+  if (m.role === "judge") {
+    const ok = m.results.every((x) => x.ok);
+    return `<div class="judge"><h3>${STAGES[m.to - 1].name} 단계 판정</h3>
+      <ul class="checklist">${m.results.map((x) => `<li><span class="check" ${x.ok ? "data-ok" : ""}>${x.ok ? CHECK : ""}</span><div><b>${esc(x.label)}</b><p>${x.ok ? "충분해요" : "아직 비어 있어요"}</p></div></li>`).join("")}</ul>
+      ${ok && i.stage + 1 === m.to ? `<button class="btn ${m.to === 5 ? "bloom" : "primary"} full" data-action="stageUp" data-id="${i.id}">${STAGES[m.to - 1].name}${m.to === 5 ? "을 피우기" : "으로 키우기"}</button>` : ok ? `<p class="faint">이미 이 단계로 자랐어요.</p>` : ""}</div>`;
+  }
+  return `<div class="msg sage"><span class="who">${SAGE_ICON}정원 신선</span>${m.pre ? esc(m.pre) : ""}${m.q ? `<span class="q">${esc(m.q)}</span>` : ""}${m.after ? `<span style="display:block;margin-top:6px">${esc(m.after)}</span>` : ""}</div>`;
+}
+
+SCREENS.plan = (r) => {
+  const i = idea(r.id); if (!i) return SCREENS.garden();
+  if (!i.plan) { i.plan = makePlan(i); save(); }
+  return `
+  <div class="view-inner">
+    <div class="topbar"><div class="left">${BACK("seed")}<h1>기획서</h1></div><button class="btn quiet small" data-action="copyPlan" data-id="${i.id}">Markdown 복사</button></div>
+    <p class="faint">문단을 눌러 바로 고칠 수 있어요. 고친 내용은 자동으로 저장돼요. 실제 앱에서는 PDF로도 내보냅니다.</p>
+    <article class="plan">
+      <header><span class="chip bloom" style="align-self:flex-start">개화 · 기획서 v1</span><h1>${esc(i.title)}</h1><span class="meta">${esc(S.user.name)} · ${esc(S.user.uni)} · 처음 심은 날 ${fmtDateTime(i.createdAt)}</span></header>
+      ${i.plan.map((s, k) => `<section><h2>${esc(s.h)}</h2><div contenteditable="true" spellcheck="false" data-plan="${i.id}" data-k="${k}">${esc(s.b)}</div></section>`).join("")}
+    </article>
+    <button class="btn quiet full" data-action="regenPlan" data-id="${i.id}">성장 일지로 다시 만들기</button>
+  </div>`;
+};
+
+SCREENS.feed = () => {
+  const items = feedItems();
+  const cats = ["all", ...new Set(allFeed().map((x) => x.category))];
+  return `
+  <div class="view-inner">
+    <div class="topbar"><h1 class="display" style="font-size:24px">공개 정원</h1><button class="points-chip" data-action="go" data-to="points"><i></i>${balance()}P</button></div>
+    <div class="seg" role="group" aria-label="범위">${[["community", "내 커뮤니티"], ["all", "전체"]].map(([k, l]) => `<button data-action="feedTab" data-v="${k}" aria-pressed="${S.feedTab === k}">${l}</button>`).join("")}</div>
+    ${bouquet(items)}
+    <div class="filters" role="group" aria-label="카테고리">${cats.map((c) => `<button class="tag-toggle" data-action="feedCat" data-v="${c}" aria-pressed="${S.feedCat === c}">${c === "all" ? "전체" : INTERESTS[c]}</button>`).join("")}</div>
+    <div class="stack" style="gap:10px">${items.filter((x) => S.feedCat === "all" || x.category === S.feedCat).sort((a, b) => b.createdAt - a.createdAt).map(feedCard).join("") || `<div class="empty">이 카테고리에는 아직 공개된 아이디어가 없어요.</div>`}</div>
+  </div>`;
+};
+
+function feedCard(x) {
+  const liked = !!S.liked[x.id];
+  return `<div class="feed-card" role="button" tabindex="0" data-action="openFeed" data-id="${x.id}">
+    ${plant(x.stage, { color: FLOWER_HUES[x.category] })}
+    <div style="min-width:0"><div class="row" style="gap:6px;margin-bottom:2px"><span class="chip ${x.stage === 5 ? "bloom" : "plain"}" style="font-size:12px;padding:0 8px">${STAGES[x.stage - 1].name}</span>${x.mine ? `<span class="chip" style="font-size:12px;padding:0 8px">내 아이디어</span>` : ""}${x.funding ? `<span class="chip plain" style="font-size:12px;padding:0 8px">펀딩 중</span>` : ""}</div>
+      <h3>${esc(x.title)}</h3><p class="sum">${esc(x.summary)}</p>
+      <div class="foot"><span>${esc(x.author)} · ${esc(x.uni)}<br>처음 심은 날 ${fmtDate(x.createdAt)}</span>
+      <button class="like" data-action="like" data-id="${x.id}" aria-pressed="${liked}" aria-label="공감 ${x.likes + (liked ? 1 : 0)}">${HEART}${x.likes + (liked ? 1 : 0)}</button></div></div></div>`;
+}
+
+function bouquet(items) {
+  const flowers = items.filter((x) => x.stage >= 4).sort((a, b) => (b.likes + (S.liked[b.id] ? 1 : 0)) - (a.likes + (S.liked[a.id] ? 1 : 0))).slice(0, 7);
+  if (!flowers.length) return `<div class="bouquet"><div class="empty">아직 꽃이 핀 아이디어가 없어요.</div></div>`;
+  const W = 340, cx = 170, base = 196;
+  const n = flowers.length;
+  // 공감이 많은 꽃일수록 가운데에 꽂습니다
+  const slots = Array.from({ length: n }, (_, k) => (n === 1 ? 0 : k / (n - 1) - 0.5)).sort((a, b) => Math.abs(a) - Math.abs(b) || a - b);
+  const placed = flowers.map((f, idx) => {
+    const t = slots[idx];
+    const ang = t * 104 * (Math.PI / 180);
+    const len = 128 + (1 - Math.abs(t) * 2) * 34 + (idx % 2) * 6;
+    const x = cx + Math.sin(ang) * len, y = base - Math.cos(ang) * len;
+    return { f, x, y, ang, idx };
+  });
+  const stems = placed.map((p) => `<path d="M${cx} ${base} Q ${cx + (p.x - cx) * 0.35} ${base - 70} ${p.x.toFixed(1)} ${(p.y + 6).toFixed(1)}" stroke="#3f6b3a" stroke-width="2.4" fill="none" stroke-linecap="round"/>` + leaf(cx + (p.x - cx) * 0.3, base - 58, (p.ang * 180) / Math.PI - (p.x > cx ? 70 : 110), 0.62, "#5c8a4f")).join("");
+  const heads = placed.map((p) => {
+    const c = FLOWER_HUES[p.f.category] || "#7b5ea7";
+    const isNew = S.justArranged === p.f.id;
+    const head = p.f.stage === 5 ? `<g class="petals">${flowerShape(c, 0.86)}</g>` : `<g class="petals" transform="translate(0 10)">${budShape(c)}</g>`;
+    return `<g class="flower ${isNew ? "arrange-new" : ""}" tabindex="0" role="button" aria-label="${esc(p.f.title)}" data-action="openFeed" data-id="${p.f.id}" transform="translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${((p.ang * 180) / Math.PI * 0.4).toFixed(1)})"><circle class="ring" r="24" fill="transparent" stroke="transparent"/>${head}</g>`;
+  }).join("");
+  const vase = `<path d="M${cx - 34} ${base - 14} C ${cx - 40} ${base + 10}, ${cx - 30} ${base + 28}, ${cx - 22} ${base + 32} L ${cx + 22} ${base + 32} C ${cx + 30} ${base + 28}, ${cx + 40} ${base + 10}, ${cx + 34} ${base - 14} Z" fill="var(--vase)" stroke="var(--vase-line)" stroke-width="1.5"/><ellipse cx="${cx}" cy="${base - 14}" rx="34" ry="5" fill="none" stroke="var(--vase-line)" stroke-width="1.5"/><path d="M${cx - 28} ${base + 4} Q ${cx} ${base + 10} ${cx + 28} ${base + 4}" stroke="var(--vase-line)" stroke-width="1" fill="none" opacity=".6"/>`;
+  return `<section class="bouquet" aria-label="이번 주 꽃꽂이">
+    <div class="row" style="justify-content:space-between"><b class="display" style="font-size:17px">이번 주 꽃꽂이</b><span class="faint">공감이 많은 꽃과 봉오리</span></div>
+    <svg viewBox="0 0 ${W} 232" role="group" aria-label="공감 많은 아이디어 꽃다발">${stems}${vase}${heads}</svg>
+    <div class="bq-legend">${flowers.map((f) => `<button data-action="openFeed" data-id="${f.id}"><i style="background:${FLOWER_HUES[f.category]}"></i>${esc(snip(f.title, 14))}</button>`).join("")}</div>
+  </section>`;
+}
+
+SCREENS.feedDetail = (r) => {
+  const x = allFeed().find((f) => f.id === r.id); if (!x) return SCREENS.feed();
+  if (x.mine) { S.route = { name: "seed", id: x.id, tab: "share" }; return SCREENS.seed(S.route); }
+  const liked = !!S.liked[x.id];
+  const sent = S.sentRequests[x.id] || {};
+  return `
+  <div class="view-inner">
+    <div class="topbar"><div class="left">${BACK("feed")}</div><button class="like" data-action="like" data-id="${x.id}" aria-pressed="${liked}">${HEART}공감 ${x.likes + (liked ? 1 : 0)}</button></div>
+    <section class="idea-hero">${plant(x.stage, { color: FLOWER_HUES[x.category] })}<div class="stack" style="gap:6px"><span class="chip ${x.stage === 5 ? "bloom" : "plain"}" style="align-self:flex-start">${STAGES[x.stage - 1].name} · ${INTERESTS[x.category]}</span><h1>${esc(x.title)}</h1><p class="meta">${esc(x.author)} · ${esc(x.uni)}<br>처음 심은 날 ${fmtDateTime(x.createdAt)}</p></div></section>
+    <p style="font-size:16px">${esc(x.summary)}</p>
+    ${x.seeking?.length ? `<div class="stack" style="gap:6px"><span class="faint">찾는 역량</span><div class="tags">${x.seeking.map((s) => `<span class="chip ${S.user.skills.includes(s) ? "hit" : "plain"}">${SKILLS[s]}</span>`).join("")}</div>${x.seeking.some((s) => S.user.skills.includes(s)) ? `<p class="faint" style="color:var(--leaf-deep)">내 역량과 맞는 부분이 있어요.</p>` : ""}</div>` : ""}
+    ${x.approved || sent.view === "approved" ? `<section class="panel stack"><span class="chip" style="align-self:flex-start">상세 내용 열람 승인됨</span><p style="white-space:pre-line;font-size:14.5px">${esc(x.detail || "작성자가 승인해서 성장 일지와 기획서를 볼 수 있어요.")}</p></section>` : `
+      <div class="lock"><div class="ghost">${[92, 80, 96, 60, 88, 70].map((w) => `<i style="width:${w}%"></i>`).join("")}</div>
+        <div class="over"><b>상세 내용은 작성자가 승인한 사람에게만 보여요</b>${sent.view ? `<span class="chip plain">열람 요청 보냄 · 승인 대기</span>` : `<button class="btn quiet small" data-action="openReq" data-id="${x.id}" data-kind="view">열람 요청하기</button>`}</div></div>`}
+    ${sent.team ? `<div class="notice">팀 참여 신청을 보냈어요. ${esc(x.author)}님이 수락하면 팀원으로 등록돼요.</div>` : `<button class="btn primary full" data-action="openReq" data-id="${x.id}" data-kind="team">팀 참여 신청</button>`}
+    ${x.funding ? `<section class="panel stack"><h2 class="sec-title">아이디어 펀딩 <small>가상 포인트</small></h2>${fundingBlock(x.funding)}<div class="row">${[10, 50, 100].map((v) => `<button class="btn quiet small" data-action="pledge" data-id="${x.id}" data-v="${v}">${v}P 응원</button>`).join("")}</div><p class="faint">내 잔액 ${balance()}P</p></section>` : ""}
+    <button class="link-btn" data-action="report" style="align-self:flex-start;color:var(--soil-faint)">이 아이디어 신고하기</button>
+  </div>`;
+};
+
+SCREENS.me = () => {
+  const pend = S.requests.filter((q) => q.status === "pending").length;
+  return `
+  <div class="view-inner">
+    <div class="topbar"><h1 class="display" style="font-size:24px">내 정보</h1><button class="link-btn" data-action="editProfile">프로필 수정</button></div>
+    <section class="panel stack" style="gap:8px">
+      <h2 class="display" style="font-size:24px">${esc(S.user.name)}</h2><p class="faint">${esc(S.user.email)}</p>
+      <div class="tags">${[S.user.uni, ...S.user.clubs].map((c) => `<span class="chip plain">${esc(c)}</span>`).join("")}</div>
+      <div class="stack" style="gap:6px;margin-top:6px"><span class="faint">내 역량</span><div class="tags">${S.user.skills.map((s) => `<span class="chip">${SKILLS[s]}</span>`).join("")}</div>${S.user.note ? `<p class="muted" style="font-size:14px">${esc(S.user.note)}</p>` : ""}</div>
+      <div class="stack" style="gap:6px"><span class="faint">관심 분야</span><div class="tags">${S.user.interests.map((s) => `<span class="chip">${INTERESTS[s]}</span>`).join("")}</div></div>
+    </section>
+    <div class="list panel" style="padding:4px 18px">
+      ${[["points", "포인트", `${balance()}P`], ["requests", "받은 신청", pend ? `<span class="chip warn">${pend}건 대기</span>` : "없음"], ["admin", "관리자 화면 (운영진 전용)", "지표·포인트 설정"]].map(([k, l, v]) => `<button class="kv" style="width:100%;border:0;background:none;text-align:left;padding:14px 0" data-action="go" data-to="${k}"><span>${l}</span><span class="muted">${v} ›</span></button>`).join("")}
+    </div>
+    <button class="link-btn" data-action="logout" style="align-self:center;color:var(--soil-soft);font-size:14px">로그아웃</button>
+  </div>`;
+};
+
+SCREENS.points = () => `
+  <div class="view-inner">
+    <div class="topbar"><div class="left">${BACK("me")}<h1>포인트</h1></div></div>
+    <section class="panel stack">
+      <span class="faint">지금 잔액</span><div class="balance"><b>${balance().toLocaleString()}</b><span class="muted">P</span></div>
+      <button class="btn primary full" data-action="go" data-to="charge">포인트 충전 (테스트)</button>
+      <p class="faint">앱 안에서만 쓰는 가상 포인트예요. 현금이나 상품권으로 바꿀 수 없어요.</p>
+    </section>
+    <section class="stack" style="gap:6px">
+      <h2 class="sec-title">모으고 쓰는 방법 <small>운영진이 베타 중 조정해요</small></h2>
+      <div class="list panel" style="padding:4px 18px">
+        ${[["주간 목표 달성", `+${S.settings.weeklyGoal}P`], ["단계 상승", `+${S.settings.stageUp}P`], [`받은 공감 ${S.settings.likeEvery}개마다`, `+${S.settings.likeBonus}P`], ["팀 결성", `+${S.settings.team}P`], [`추가 질문 ${S.settings.packSize}개 묶음`, `−${S.settings.packCost}P`], ["펀딩 등록", `−${S.settings.fundingFee}P`]].map(([a, b]) => `<div class="kv"><span>${a}</span><span class="amt ${b.startsWith("+") ? "plus" : "minus"}">${b}</span></div>`).join("")}
+      </div>
+    </section>
+    <section class="stack" style="gap:6px">
+      <h2 class="sec-title">거래 기록</h2>
+      <div class="list panel" style="padding:4px 18px">${[...S.tx].reverse().map((t) => `<div class="kv"><span style="min-width:0">${esc(t.reason)}<br><span class="faint">${fmtDateTime(t.at)}</span></span><span class="amt ${t.amount > 0 ? "plus" : "minus"}">${t.amount > 0 ? "+" : "−"}${Math.abs(t.amount)}P</span></div>`).join("")}</div>
+    </section>
+  </div>`;
+
+const PACKS = [{ p: 100, won: 1000 }, { p: 300, won: 2900 }, { p: 500, won: 4500 }, { p: 1000, won: 8500 }];
+SCREENS.charge = () => {
+  const sel = S.draft.pack ?? 1;
+  return `
+  <div class="view-inner">
+    <div class="topbar"><div class="left">${BACK("points")}<h1>포인트 충전</h1></div><span class="chip warn">테스트 모드</span></div>
+    <div class="packs">${PACKS.map((k, n) => `<button class="pack" data-action="pickPack" data-n="${n}" aria-pressed="${sel === n}"><b>${k.p.toLocaleString()}P</b><span>${k.won.toLocaleString()}원</span></button>`).join("")}</div>
+    <section class="panel stack">
+      <div class="kv" style="padding:0"><span>결제 금액</span><span class="amt">${PACKS[sel].won.toLocaleString()}원</span></div>
+      <div class="field"><span class="label">결제 수단</span><div class="tags"><button class="tag-toggle" aria-pressed="true">테스트 카드</button><button class="tag-toggle" aria-pressed="false" disabled>간편결제 (베타 이후)</button></div></div>
+      <p class="faint">베타에서는 실제로 결제되지 않아요. 버튼을 누르면 결제가 끝난 것처럼 포인트만 들어와요.</p>
+      <button class="btn primary full" data-action="charge">${PACKS[sel].won.toLocaleString()}원 테스트 결제</button>
+    </section>
+  </div>`;
+};
+
+SCREENS.requests = () => {
+  const list = [...S.requests].sort((a, b) => b.at - a.at);
+  return `
+  <div class="view-inner">
+    <div class="topbar"><div class="left">${BACK("me")}<h1>받은 신청</h1></div></div>
+    ${list.length ? list.map((q) => { const p = person(q.from); const i = idea(q.ideaId); return `
+      <section class="panel stack" style="gap:10px">
+        <div class="row" style="justify-content:space-between"><span class="chip ${q.kind === "team" ? "" : "plain"}">${q.kind === "team" ? "팀 참여 신청" : "상세 열람 요청"}</span><span class="faint">${relDays(q.at)}</span></div>
+        <div class="person" style="padding:0"><span class="avatar">${esc(p.name[0])}</span><div><b>${esc(p.name)}</b> <span class="faint">${esc(p.uni)}</span><div class="tags">${p.skills.map((s) => `<span class="chip ${i.seeking.includes(s) ? "hit" : "plain"}">${SKILLS[s]}</span>`).join("")}</div></div><span></span></div>
+        <p class="faint">아이디어: ${esc(i.title)}</p>
+        <p style="font-size:14.5px">${esc(q.note)}</p>
+        ${q.status === "pending" ? `<div class="row"><button class="btn primary small" data-action="answerReq" data-id="${q.id}" data-v="approved">${q.kind === "team" ? "수락하고 팀원으로 등록" : "열람 승인"}</button><button class="btn quiet small" data-action="answerReq" data-id="${q.id}" data-v="declined">거절</button></div>` : `<span class="chip ${q.status === "approved" ? "" : "plain"}" style="align-self:flex-start">${q.status === "approved" ? (q.kind === "team" ? "팀원으로 등록함" : "열람 승인함") : "거절함"}</span>`}
+      </section>`; }).join("") : `<div class="empty">받은 신청이 없어요.</div>`}
+  </div>`;
+};
+
+SCREENS.admin = () => {
+  const stages = [182, 96, 51, 23, 12];
+  const total = stages.reduce((a, b) => a + b, 0);
+  const wau = [96, 121, 140, 152, 171, 188, 203, 214];
+  const max = Math.max(...wau);
+  const pts = wau.map((v, k) => `${(k / (wau.length - 1)) * 300 + 10},${70 - (v / max) * 56}`).join(" ");
+  const st = S.settings;
+  return `
+  <div class="view-inner">
+    <div class="topbar"><div class="left">${BACK("me")}<h1>관리자</h1></div><span class="chip plain">예시 수치</span></div>
+    <section class="stats">
+      <div class="stat"><span>주간 활성 사용자</span><b>214</b><small>지난주보다 +11</small></div>
+      <div class="stat"><span>주간 목표 달성률</span><b>38%</b><small>목표 ${st.weeklyTarget}회 기준</small></div>
+      <div class="stat"><span>개화율</span><b>${((stages[4] / total) * 100).toFixed(1)}%</b><small>전체 ${total}개 중 ${stages[4]}개</small></div>
+      <div class="stat"><span>2주 재방문율</span><b>46%</b><small>가입 후 14일 안</small></div>
+    </section>
+    <section class="panel stack">
+      <h2 class="sec-title">주간 활성 사용자 <small>최근 8주</small></h2>
+      <svg viewBox="0 0 320 84" role="img" aria-label="주간 활성 사용자 96명에서 214명으로 증가">
+        ${[14, 42, 70].map((y) => `<line x1="10" x2="310" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`).join("")}
+        <polygon points="10,70 ${pts} 310,70" fill="var(--sprout-soft)"/>
+        <polyline points="${pts}" fill="none" stroke="var(--leaf)" stroke-width="2.2" stroke-linejoin="round"/>
+        <circle cx="310" cy="${70 - (wau[7] / max) * 56}" r="4" fill="var(--leaf)"/>
+        <text x="10" y="82" font-size="10" fill="var(--soil-faint)">8주 전</text><text x="310" y="82" font-size="10" text-anchor="end" fill="var(--soil-faint)">이번 주</text>
+      </svg>
+    </section>
+    <section class="panel stack" style="gap:10px">
+      <h2 class="sec-title">단계별 아이디어 수</h2>
+      ${STAGES.map((s, k) => `<div class="hbar"><span>${s.name}</span><span class="track2"><i class="${k === 4 ? "bloomy" : ""}" style="width:${(stages[k] / stages[0]) * 100}%"></i></span><span>${stages[k]}</span></div>`).join("")}
+    </section>
+    <section class="panel stack" style="gap:2px">
+      <h2 class="sec-title" style="margin-bottom:6px">포인트·질문 설정 <small>바꾸면 프로토타입에 바로 적용</small></h2>
+      ${[["freePerStage", "단계별 무료 질문 수"], ["packSize", "추가 질문 묶음 크기"], ["packCost", "묶음 가격 (P)"], ["stageUp", "단계 상승 보상 (P)"], ["weeklyTarget", "주간 목표 횟수"], ["weeklyGoal", "주간 목표 보상 (P)"], ["fundingFee", "펀딩 등록비 (P)"]].map(([k, l]) => `<label class="setting" for="set-${k}"><span>${l}</span><input class="input" id="set-${k}" type="number" min="1" max="999" value="${st[k]}" data-setting="${k}"></label>`).join("")}
+    </section>
+    <section class="panel stack" style="gap:8px">
+      <h2 class="sec-title">정원 신선 사용량 <small>오늘 · 예시</small></h2>
+      <div class="kv" style="padding:0"><span>LLM 호출</span><span class="amt">1,284회</span></div>
+      <div class="kv" style="padding:0"><span>추정 비용</span><span class="amt">₩18,400</span></div>
+      <div class="kv" style="padding:0"><span>일일 상한에 닿은 사용자</span><span class="amt">3명</span></div>
+    </section>
+    <section class="panel stack" style="gap:8px">
+      <h2 class="sec-title">신고된 콘텐츠 <small>1건</small></h2>
+      <p style="font-size:14px">「시험 족보 공유방」 · 신고 사유: 저작권 침해 우려</p>
+      <div class="row"><button class="btn quiet small" data-action="toast" data-msg="비공개로 전환했어요 (프로토타입)">비공개로 전환</button><button class="btn quiet small" data-action="toast" data-msg="신고를 기각했어요 (프로토타입)">문제없음</button></div>
+    </section>
+  </div>`;
+};
+
+/* ---------- 정원 계산 ---------- */
+function weekCount() {
+  const ws = weekStart(now());
+  let n = 0;
+  for (let d = 0; d < 7; d++) if (S.activity[dkey(ws + d * DAY)]) n++;
+  return n;
+}
+function grass() {
+  const weeks = 12;
+  const ws = weekStart(now());
+  const start = ws - (weeks - 1) * 7 * DAY;
+  let cells = "", marks = "";
+  for (let w = 0; w < weeks; w++) {
+    let days = 0;
+    for (let d = 0; d < 7; d++) {
+      const t = start + (w * 7 + d) * DAY;
+      const k = dkey(t);
+      const future = t > startOfDay(now());
+      const v = S.activity[k] || 0;
+      if (v) days++;
+      cells += `<i ${future ? "data-future" : `data-l="${Math.min(3, v)}"`} ${k === dkey(now()) ? "data-today" : ""} title="${fmtDate(t)} ${v ? `${v}회` : "활동 없음"}"></i>`;
+    }
+    marks += `<span ${days >= S.settings.weeklyTarget ? "data-done" : ""}></span>`;
+  }
+  return `<div class="stack" style="gap:6px">
+    <div class="grass-wrap"><div class="grass-days" aria-hidden="true"><span>월</span><span></span><span>수</span><span></span><span>금</span><span></span><span>일</span></div>
+    <div class="grass" role="img" aria-label="최근 12주 정원 가꾸기 기록">${cells}</div></div>
+    <div class="week-marks" style="grid-template-columns:repeat(${weeks},1fr)" aria-hidden="true">${marks}</div>
+    <div class="row" style="justify-content:space-between"><span class="faint" style="font-size:11px">초록 막대 = 목표를 채운 주</span><span class="legend">적음 <i style="background:var(--grass-1)"></i><i style="background:var(--grass-2)"></i><i style="background:var(--grass-3)"></i> 많음</span></div>
+  </div>`;
+}
+function markActivity() {
+  const k = dkey(now());
+  S.activity[k] = (S.activity[k] || 0) + 1;
+  const ws = weekStart(now());
+  if (weekCount() >= S.settings.weeklyTarget && !S.goalAwarded[ws]) {
+    S.goalAwarded[ws] = true;
+    addTx(S.settings.weeklyGoal, "주간 목표 달성");
+    setTimeout(() => toast(`이번 주 목표를 채웠어요. +${S.settings.weeklyGoal}P`), 600);
+  }
+}
+const lastTouched = (i) => Math.max(i.createdAt, ...i.log.map((e) => e.at), ...(i.chat.length ? [i.chat[i.chat.length - 1].at || 0] : [0]));
+
+/* ---------- 정원 신선 엔진 (각본) ---------- */
+function ensureChatStarted(i) {
+  if (i.chat.length && i.session) return;
+  i.session = { newKeys: [], startedAt: now() };
+  const ru = RUBRIC[i.stage + 1];
+  if (!ru) { if (!i.chat.length) i.chat.push({ role: "sage", pre: "꽃이 피었어요. 이제 기획서로 정리할 차례예요.", at: now() }); return; }
+  const first = ru.items.find((it) => !i.answers[it.k]);
+  i.chat.push({ role: "note", text: `${fmtDateTime(now())} · ${STAGES[i.stage - 1].name} 단계`, at: now() });
+  if (i.pending && !i.pending.unpaid) {
+    const it = ru.items.find((x) => x.k === i.pending.k);
+    if (it && !i.answers[it.k]) { i.chat.push({ role: "sage", pre: "지난번 질문부터 이어 갈게요.\n", q: it.q, at: now() }); save(); return; }
+    i.pending = null;
+  }
+  if (!first) { i.chat.push({ role: "sage", pre: `${ru.title}에 필요한 이야기는 모두 모였어요.`, after: "위의 '다음 단계로'를 눌러 단계 판정을 받아 보세요.", at: now() }); save(); return; }
+  const opener = (i.log.length ? OPEN[1] : OPEN[0]).replace("%s", ru.title);
+  askItem(i, first, opener);
+  save();
+}
+function credit(i) { if (i.freeLeft > 0) { i.freeLeft--; return true; } if (i.paidLeft > 0) { i.paidLeft--; return true; } return false; }
+function askItem(i, it, pre) {
+  if (!credit(i)) {
+    i.pending = { k: it.k, followed: false, unpaid: true };
+    i.chat.push({ role: "note", text: "이 단계의 무료 질문을 모두 썼어요.", at: now() });
+    setTimeout(() => openPay(i), 300);
+    return;
+  }
+  i.pending = { k: it.k, followed: false };
+  i.chat.push({ role: "sage", pre: pre ? pre + "\n" : "", q: it.q, at: now() });
+}
+function nextUnanswered(i) { const ru = RUBRIC[i.stage + 1]; return ru ? ru.items.find((it) => !i.answers[it.k]) : null; }
+function onAnswer(i, text) {
+  i.chat.push({ role: "me", text, at: now() });
+  const ru = RUBRIC[i.stage + 1];
+  const it = i.pending && ru ? ru.items.find((x) => x.k === i.pending.k) : null;
+  if (!it) { i.chat.push({ role: "sage", pre: "말씀 고마워요.", after: "필요한 질문은 다 드렸어요. '다음 단계로'로 판정을 받아 보시겠어요?", at: now() }); return; }
+  const vague = text.trim().length < 14 || VAGUE.test(text);
+  if (vague && !i.pending.followed) {
+    if (!credit(i)) { i.answers[it.k] = text.trim(); i.session.newKeys.push(it.k); i.pending = null; i.chat.push({ role: "note", text: "무료 질문을 다 써서 이 답을 그대로 적어 둘게요.", at: now() }); setTimeout(() => openPay(i), 300); return; }
+    i.pending.followed = true;
+    i.chat.push({ role: "sage", pre: "", q: it.f, at: now() });
+    return;
+  }
+  i.answers[it.k] = text.trim();
+  if (!i.session.newKeys.includes(it.k)) i.session.newKeys.push(it.k);
+  i.pending = null;
+  const ack = ACK[Math.floor(Math.random() * ACK.length)].replace("%s", snip(text, 20));
+  const nx = nextUnanswered(i);
+  if (nx) askItem(i, nx, ack);
+  else i.chat.push({ role: "sage", pre: ack, after: `${ru.title}에 필요한 이야기가 모두 모였어요. 단계 판정을 해 볼까요?`, at: now() }), judge(i);
+}
+function judge(i) {
+  const to = i.stage + 1; const ru = RUBRIC[to]; if (!ru) return;
+  const results = ru.items.map((it) => ({ label: it.label, ok: !!i.answers[it.k] }));
+  i.chat.push({ role: "judge", to, results, at: now() });
+  const miss = results.filter((x) => !x.ok);
+  if (miss.length) {
+    const nx = nextUnanswered(i);
+    const pre = `아직 ${miss.map((m) => `'${m.label}'`).join(", ")}이(가) 비어 있어요. 이것부터 이야기해 볼까요?`;
+    if (nx && (!i.pending || i.pending.k !== nx.k)) askItem(i, nx, pre);
+    else i.chat.push({ role: "sage", pre, after: "위 질문에 답해 주시면 돼요.", at: now() });
+  }
+}
+function stageUp(i) {
+  const from = i.stage;
+  i.stage++;
+  i.freeLeft = S.settings.freePerStage; i.paidLeft = 0; i.pending = null;
+  addTx(S.settings.stageUp, `단계 상승 · ${i.title} ${STAGES[i.stage - 1].name}`);
+  finishSession(i, true);
+  i.chat.push({ role: "note", text: `${STAGES[i.stage - 1].name} 단계가 됐어요 · +${S.settings.stageUp}P`, at: now() });
+  if (i.stage < 5) { i.session = { newKeys: [], startedAt: now() }; const nx = nextUnanswered(i); askItem(i, nx, `이제 '${RUBRIC[i.stage + 1].title}'를 다룰 차례예요.`); }
+  else i.chat.push({ role: "sage", pre: "꽃이 피었어요. 여기까지 오는 아이디어는 많지 않아요.", after: "이제 기획서로 정리하고, 원하면 공유해서 함께할 사람을 찾아보세요.", at: now() });
+  save();
+  celebrate(from, i);
+}
+function finishSession(i, silent) {
+  if (!i.session) return null;
+  const ru = RUBRIC[i.stage + (silent ? 0 : 1)] || RUBRIC[i.stage];
+  const keys = i.session.newKeys;
+  const items = Object.values(RUBRIC).flatMap((r) => r.items);
+  const entry = {
+    at: now(), stage: silent ? i.stage - 1 : i.stage,
+    conclusions: keys.map((k) => { const it = items.find((x) => x.k === k); return [it.label, snip(i.answers[k], 48)]; }),
+    organized: keys.length,
+    open: silent ? [] : (RUBRIC[i.stage + 1]?.items.filter((it) => !i.answers[it.k]).map((it) => it.label) || []),
+  };
+  const touched = keys.length || i.chat.some((m) => m.role === "me" && m.at >= i.session.startedAt);
+  i.session = null;
+  if (!touched) return null;
+  i.log.push(entry);
+  markActivity();
+  return entry;
+}
+
+/* ---------- 기획서 ---------- */
+function makePlan(i) {
+  const a = i.answers;
+  const L = (s) => s || "(아직 정리되지 않았어요)";
+  const team = i.seeking.length ? i.seeking.map((s) => SKILLS[s]).join(", ") : "아직 정하지 않았어요";
+  return [
+    { h: "문제 정의", b: `${L(a.who)}이(가)\n${L(a.when)}\n이 순간 겪는 불편: ${L(a.pain)}` },
+    { h: "타깃 사용자", b: `처음 쓸 사람: ${L(a.target)}\n지금의 대안: ${L(a.alt)}` },
+    { h: "해결책과 핵심 기능", b: `${L(a.solution)}\n핵심 기능: ${L(a.features)}` },
+    { h: "차별점", b: `기존 대안의 한계: ${L(a.gap)}\n우리가 다른 점: ${L(a.diff)}` },
+    { h: "검증 계획", b: `${L(a.validate)}\n성공 기준: ${L(a.metric)}` },
+    { h: "비즈니스 모델", b: L(a.bm) },
+    { h: "필요한 팀 역량", b: `${team}\n현재 팀: ${[S.user.name, ...i.team.map((p) => person(p).name)].join(", ")}` },
+  ];
+}
+function planMarkdown(i) { return `# ${i.title}\n\n> ${S.user.name} · ${S.user.uni} · 처음 심은 날 ${fmtDateTime(i.createdAt)}\n\n` + i.plan.map((s) => `## ${s.h}\n\n${s.b}`).join("\n\n") + "\n"; }
+function sageSummaryDraft(i) { const a = i.answers; if (a.solution) return snip(`${a.target ? snip(a.target, 18) + "을 위한 " : ""}${a.solution}`, 110); if (a.pain) return snip(`${a.who ? snip(a.who, 20) + "의 " : ""}불편: ${a.pain}`, 110); return snip(i.body, 110); }
+
+/* ---------- 공유 · 피드 ---------- */
+function mineAsFeed() {
+  return S.ideas.filter((i) => i.visibility !== "private" && i.published !== false && (i.published || i.id === "class" || i.id === "share")).map((i) => ({ id: i.id, title: i.title, summary: i.summary || sageSummaryDraft(i), author: S.user.name, uni: S.user.uni, community: true, stage: i.stage, category: i.category, likes: i.likes, createdAt: i.createdAt, seeking: i.seeking, funding: i.funding, mine: true, vis: i.visibility }));
+}
+const allFeed = () => [...mineAsFeed(), ...S.feed];
+function feedItems() { return allFeed().filter((x) => S.feedTab === "all" || x.community); }
+function sameCommunity(p) { return p.uni === S.user.uni || p.clubs.some((c) => S.user.clubs.includes(c)); }
+function recommend(i) {
+  return S.people.filter((p) => !i.team.includes(p.id)).map((p) => ({ p, s: p.skills.filter((s) => i.seeking.includes(s)).length * 2 + (sameCommunity(p) ? 1 : 0) })).filter((x) => x.s >= 2).sort((a, b) => b.s - a.s).map((x) => x.p);
+}
+
+/* ---------- 연출 ---------- */
+const app = $("#app");
+let toastTimer;
+function toast(msg) {
+  document.querySelectorAll(".toast").forEach((t) => t.remove());
+  const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); t.textContent = msg; app.appendChild(t);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2600);
+}
+function sheet(html) {
+  closeSheet();
+  const s = document.createElement("div"); s.className = "scrim"; s.dataset.scrim = "1";
+  s.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><div class="grab" aria-hidden="true"></div>${html}</div>`;
+  app.appendChild(s);
+  const f = s.querySelector("input, textarea, button.btn"); if (f) setTimeout(() => f.focus(), 50);
+}
+function closeSheet() { document.querySelectorAll(".scrim").forEach((x) => x.remove()); }
+function celebrate(from, i) {
+  const c = document.createElement("div"); c.className = "celebrate"; c.setAttribute("role", "dialog"); c.setAttribute("aria-label", "단계 상승");
+  const color = FLOWER_HUES[i.category] || "#7b5ea7";
+  c.innerHTML = `<div class="plant"><div class="old">${plant(from, { color })}</div><div class="new">${plant(i.stage, { color })}</div></div>
+    <h2>${STAGES[i.stage - 1].name}${i.stage === 5 ? "이 피었어요" : "이 됐어요"}</h2><span class="gain">+${S.settings.stageUp}P</span>
+    <p class="muted" style="max-width:28ch">${i.stage === 5 ? "이제 기획서를 만들 수 있어요." : `다음은 '${RUBRIC[i.stage + 1].title}'예요. 무료 질문 ${S.settings.freePerStage}개가 새로 생겼어요.`}</p>
+    <div class="row" style="justify-content:center">${i.stage === 5 ? `<button class="btn bloom" data-action="closeCelebrate" data-then="plan" data-id="${i.id}">기획서 만들기</button>` : ""}<button class="btn ${i.stage === 5 ? "quiet" : "primary"}" data-action="closeCelebrate">계속 이야기하기</button></div>`;
+  app.appendChild(c);
+}
+function openPay(i) {
+  const st = S.settings;
+  sheet(`<h2>질문을 더 받을까요?</h2>
+    <p class="muted">이 단계의 무료 질문 ${st.freePerStage}개를 모두 썼어요. 포인트로 질문 ${st.packSize}개 묶음을 받을 수 있어요.</p>
+    <div class="panel stack" style="gap:6px"><div class="kv" style="padding:0"><span>질문 ${st.packSize}개 묶음</span><span class="amt">${st.packCost}P</span></div><div class="kv" style="padding:0"><span>내 잔액</span><span class="amt">${balance()}P</span></div></div>
+    ${balance() >= st.packCost ? `<button class="btn primary full" data-action="buyPack" data-id="${i.id}">${st.packCost}P로 질문 ${st.packSize}개 받기</button>` : `<button class="btn primary full" data-action="go" data-to="charge">포인트 충전하러 가기</button>`}
+    <button class="btn quiet full" data-action="closeSheet">나중에</button>
+    <p class="faint">단계가 오르면 무료 질문이 다시 ${st.freePerStage}개 생겨요.</p>`);
+}
+
+/* ---------- 행동 ---------- */
+function matchUni(email) { const d = (email.split("@")[1] || "").toLowerCase(); return UNIS.find((u) => d === u.domain || d.endsWith("." + u.domain)); }
+const A = {
+  go: (d) => { closeSheet(); const params = {}; if (d.id) params.id = d.id; if (d.to === "seed" || d.to === "chat" || d.to === "plan") { params.id = d.id || S.route.id; } if (d.to === "seed" && S.route.name === "chat") { const i = idea(params.id); if (i && i.session) finishSession(i); } go(d.to, params); },
+  tab: (d) => go("seed", { id: d.id, tab: d.tab }),
+  demoLogin: () => { S.signedIn = true; go("garden"); },
+  logout: () => { S.signedIn = false; go("landing"); },
+  editProfile: () => { S.draft.onb = { interests: [...S.user.interests], skills: [...S.user.skills], code: "" }; S.draft.editing = true; go("onboarding"); },
+  verify: () => { S.signedIn = true; S.draft.onb = { interests: [], skills: [], code: "" }; go("onboarding"); },
+  toggleOnb: (d) => { const o = S.draft.onb || (S.draft.onb = { interests: [], skills: [] }); const arr = o[d.kind]; const k = arr.indexOf(d.k); if (k >= 0) arr.splice(k, 1); else if (arr.length < 8) arr.push(d.k); render(); },
+  finishOnb: () => {
+    const o = S.draft.onb || { interests: [], skills: [] };
+    if (!o.interests.length || !o.skills.length) { toast("관심 분야와 역량을 하나 이상 골라 주세요."); return; }
+    const code = (o.code || "").trim().toUpperCase();
+    if (code && !CLUB_CODES[code]) { toast("초대 코드가 맞지 않아요. 예시 코드는 SEED2026이에요."); return; }
+    S.user.interests = o.interests; S.user.skills = o.skills;
+    if (S.draft.editing) {
+      if (code && !S.user.clubs.includes(CLUB_CODES[code])) S.user.clubs.push(CLUB_CODES[code]);
+      S.draft.editing = false; go("me"); toast("프로필을 저장했어요."); return;
+    }
+    S.user.note = "";
+    S.user.clubs = code ? [CLUB_CODES[code]] : [];
+    go("garden", { welcome: 1 });
+  },
+  openPlant: () => sheet(`<h2>씨앗 심기</h2><p class="muted">최근에 불편했던 순간 하나면 충분해요. 다듬는 건 신선과 함께 해요.</p>
+    <form class="stack" data-form="plant" style="gap:14px">
+      <div class="field"><label for="pl-title">제목</label><input class="input" id="pl-title" name="title" maxlength="40" placeholder="예: 팀플 회의 시간 맞추기" required></div>
+      <div class="field"><label for="pl-body">어떤 점이 불편했나요? 어떤 아이디어인가요?</label><textarea class="textarea" id="pl-body" name="body" maxlength="400" placeholder="예: 여섯 명 시간표를 맞추느라 단톡방에서 하루가 간다."></textarea></div>
+      <div class="field"><span class="label">분야</span><div class="tags">${Object.entries(INTERESTS).slice(0, 8).map(([k, l], n) => `<label class="tag-toggle" style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="cat" value="${k}" ${n === 0 ? "checked" : ""}>${l}</label>`).join("")}</div></div>
+      <button class="btn primary full" type="submit">심기</button>
+    </form>`),
+  closeSheet: () => closeSheet(),
+  openGuide: () => sheet(`<h2>둘러보기 안내</h2>${guideBody()}`),
+  hint: (d) => {
+    const i = idea(d.id); const ru = RUBRIC[i.stage + 1]; const it = ru && i.pending && ru.items.find((x) => x.k === i.pending.k); if (!it) return;
+    const input = $("#chat-input");
+    const demo = demoFor(i, it.k);
+    if (demo) { input.value = demo; S.draft["chat-" + i.id] = demo; input.focus(); }
+    else toast(it.hint);
+  },
+  askNextStage: (d) => { const i = idea(d.id); judge(i); save(); render(); },
+  stageUp: (d) => { const i = idea(d.id); if (i.stage < 5) stageUp(i); render(); },
+  closeCelebrate: (d) => { document.querySelectorAll(".celebrate").forEach((c) => c.remove()); if (d.then === "plan") go("plan", { id: d.id }); },
+  endSession: (d) => {
+    const i = idea(d.id); const e = finishSession(i);
+    save();
+    if (!e) { go("seed", { id: i.id }); toast("오늘 새로 이야기한 내용이 없어요."); return; }
+    go("seed", { id: i.id, tab: "log" });
+    sheet(`<h2>오늘의 성장 일지</h2>
+      <div class="log-entry"><dl>
+        <dt>오늘 나온 결론</dt><dd>${e.conclusions.length ? `<ul>${e.conclusions.map(([l, a]) => `<li><b style="font-weight:500">${esc(l)}</b>: ${esc(a)}</li>`).join("")}</ul>` : "새로 정해진 내용은 없어요"}</dd>
+        <dt>아직 남은 질문</dt><dd>${e.open.length ? e.open.map(esc).join(", ") : "없음. 다음엔 단계 판정부터 받아 보세요"}</dd>
+      </dl></div>
+      <div class="notice">오늘 정원을 가꿨어요. 이번 주 ${weekCount()}/${S.settings.weeklyTarget}회</div>
+      <button class="btn primary full" data-action="closeSheet">확인</button>`);
+  },
+  buyPack: (d) => { const i = idea(d.id); const st = S.settings; if (balance() < st.packCost) return; addTx(-st.packCost, `추가 질문 ${st.packSize}개 · ${i.title}`); i.paidLeft += st.packSize; closeSheet();
+    if (i.pending && i.pending.unpaid) { const ru = RUBRIC[i.stage + 1]; const it = ru.items.find((x) => x.k === i.pending.k); i.chat.pop(); askItem(i, it, "질문을 이어 갈게요."); }
+    else { const nx = nextUnanswered(i); if (nx && !i.pending) askItem(i, nx, "질문을 이어 갈게요."); }
+    save(); render(); toast(`질문 ${st.packSize}개를 받았어요. −${st.packCost}P`); },
+  setVis: (d) => { const i = idea(d.id); i.visibility = d.v; if (d.v === "private") i.published = false; save(); render(); },
+  toggleSeek: (d) => { const i = idea(d.id); const k = i.seeking.indexOf(d.k); if (k >= 0) i.seeking.splice(k, 1); else i.seeking.push(d.k); save(); render(); },
+  publish: (d) => {
+    const i = idea(d.id); if (i.visibility === "private") return;
+    const ta = document.getElementById("sum-" + i.id); i.summary = (ta?.value || "").trim() || sageSummaryDraft(i);
+    i.published = true; S.feedTab = i.visibility === "all" ? "all" : "community"; S.feedCat = "all";
+    if (i.stage >= 4) S.justArranged = i.id;
+    save(); go("feed");
+    toast(i.stage >= 4 ? "꽃꽂이에 올렸어요. 처음 심은 날과 작성자가 함께 표시돼요." : "공개 정원에 올렸어요. 요약만 보여요.");
+    setTimeout(() => { S.justArranged = null; }, 1500);
+  },
+  openPerson: (d) => { const p = person(d.pid); sheet(`<div class="person" style="padding:0"><span class="avatar">${esc(p.name[0])}</span><div><h2 style="font-size:20px">${esc(p.name)}</h2><span class="faint">${esc(p.uni)}${p.clubs.length ? " · " + p.clubs.join(", ") : ""}</span></div><span></span></div>
+    <div class="tags">${p.skills.map((s) => `<span class="chip">${SKILLS[s]}</span>`).join("")}</div><p>${esc(p.bio)}</p>
+    <p class="faint">팀은 상대방이 참여 신청을 보내고 내가 수락하면 꾸려져요. 공개 정원에 올리면 추천된 사람에게 아이디어가 먼저 보여요.</p>
+    <button class="btn quiet full" data-action="closeSheet">닫기</button>`); },
+  openFund: (d) => { const i = idea(d.id); const st = S.settings; sheet(`<h2>펀딩 등록</h2><p class="muted">다른 사용자가 포인트로 응원할 수 있어요. 실제 돈은 오가지 않아요.</p>
+    <div class="field"><span class="label">목표 포인트</span><div class="tags">${[300, 500, 1000].map((v, n) => `<label class="tag-toggle" style="display:inline-flex;align-items:center;gap:6px"><input type="radio" name="goal" value="${v}" ${n === 1 ? "checked" : ""} form="fund-form">${v}P</label>`).join("")}</div></div>
+    <div class="panel stack" style="gap:6px"><div class="kv" style="padding:0"><span>기간</span><span class="amt">14일</span></div><div class="kv" style="padding:0"><span>등록비</span><span class="amt">${st.fundingFee}P</span></div><div class="kv" style="padding:0"><span>내 잔액</span><span class="amt">${balance()}P</span></div></div>
+    <form id="fund-form" data-form="fund" data-id="${i.id}"><button class="btn bloom full" type="submit" ${balance() < st.fundingFee ? "disabled" : ""}>${balance() < st.fundingFee ? "포인트가 부족해요" : `${st.fundingFee}P로 등록하기`}</button></form>`); },
+  feedTab: (d) => { S.feedTab = d.v; save(); render(); },
+  feedCat: (d) => { S.feedCat = d.v; save(); render(); },
+  openFeed: (d) => go("feedDetail", { id: d.id }),
+  like: (d, ev) => {
+    ev.stopPropagation();
+    if (idea(d.id)) { toast("내 아이디어에는 공감할 수 없어요."); return; }
+    S.liked[d.id] = !S.liked[d.id];
+    save(); render();
+  },
+  openReq: (d) => {
+    const x = allFeed().find((f) => f.id === d.id);
+    const team = d.kind === "team";
+    sheet(`<h2>${team ? "팀 참여 신청" : "상세 내용 열람 요청"}</h2><p class="muted">${esc(x.author)}님이 승인하면 ${team ? "팀원으로 등록돼요." : "성장 일지와 기획서를 볼 수 있어요."}</p>
+    <form class="stack" data-form="req" data-id="${x.id}" data-kind="${d.kind}" style="gap:14px">
+      <div class="field"><label for="rq-note">${team ? "간단한 자기소개" : "궁금한 이유"}</label><textarea class="textarea" id="rq-note" name="note" maxlength="300" placeholder="${team ? "예: 프론트엔드를 맡아 2주 안에 시제품을 만들어 볼 수 있어요." : "예: 비슷한 문제를 겪고 있어서 해결 방법이 궁금해요."}"></textarea></div>
+      ${team ? `<div class="field"><span class="label">내 역량</span><div class="tags">${S.user.skills.map((s) => `<span class="chip ${x.seeking?.includes(s) ? "hit" : "plain"}">${SKILLS[s]}</span>`).join("")}</div></div>` : ""}
+      <button class="btn primary full" type="submit">${team ? "신청 보내기" : "요청 보내기"}</button></form>`);
+  },
+  pledge: (d) => {
+    const x = S.feed.find((f) => f.id === d.id); const v = +d.v;
+    if (balance() < v) { toast("포인트가 부족해요. 내 정보에서 충전할 수 있어요."); return; }
+    addTx(-v, `응원 · ${x.title}`); x.funding.raised += v; x.funding.backers++; save(); render(); toast(`${v}P로 응원했어요.`);
+  },
+  report: () => toast("신고를 접수했어요. 운영진이 확인해요."),
+  answerReq: (d) => {
+    const q = S.requests.find((r) => r.id === d.id); q.status = d.v;
+    const i = idea(q.ideaId);
+    if (d.v === "approved" && q.kind === "team") {
+      const first = i.team.length === 0;
+      i.team.push(q.from);
+      if (first) { addTx(S.settings.team, `팀 결성 · ${i.title}`); toast(`팀이 꾸려졌어요. +${S.settings.team}P`); } else toast("팀원으로 등록했어요.");
+    } else toast(d.v === "approved" ? "열람을 승인했어요." : "거절했어요.");
+    save(); render();
+  },
+  pickPack: (d) => { S.draft.pack = +d.n; render(); },
+  charge: () => { const k = PACKS[S.draft.pack ?? 1]; addTx(k.p, `테스트 충전 · ${k.won.toLocaleString()}원`); save(); go("points"); toast(`${k.p}P가 들어왔어요. 실제 결제는 없었어요.`); },
+  copyPlan: (d) => {
+    const i = idea(d.id); const md = planMarkdown(i);
+    const done = () => toast("Markdown을 복사했어요.");
+    try { navigator.clipboard.writeText(md).then(done, () => fallbackCopy(md)); } catch (e) { fallbackCopy(md); }
+  },
+  regenPlan: (d) => { const i = idea(d.id); i.plan = makePlan(i); save(); render(); toast("성장 일지로 다시 만들었어요."); },
+  toast: (d) => toast(d.msg),
+  jump: (d) => JUMPS[d.j](),
+  reset: () => { try { localStorage.removeItem(STORE); } catch (e) {} S = seedState(); render(true); toast("예시 데이터로 처음부터 시작해요."); },
+};
+function fallbackCopy(md) {
+  sheet(`<h2>Markdown 복사</h2><p class="muted">이 환경에서는 자동 복사가 막혀 있어요. 아래 글을 길게 눌러 복사해 주세요.</p><textarea class="textarea" style="min-height:240px;font-size:13px" readonly id="md-out">${esc(md)}</textarea><button class="btn quiet full" data-action="closeSheet">닫기</button>`);
+  setTimeout(() => { const t = $("#md-out"); if (t) { t.focus(); t.select(); } }, 60);
+}
+
+/* ---------- 폼 ---------- */
+const FORMS = {
+  signup: (f) => {
+    const name = f.name.value.trim(), email = f.email.value.trim().toLowerCase(), pw = f.pw.value;
+    const err = $("#su-error");
+    const m = matchUni(email);
+    const msg = !name ? "이름을 입력해 주세요." : !m ? "베타 참여 대학의 학교 이메일로만 가입할 수 있어요. 예: you@hanbit.test" : pw.length < 8 ? "비밀번호는 8자 이상으로 정해 주세요." : "";
+    if (msg) { err.textContent = msg; err.hidden = false; return; }
+    S.user = { ...S.user, name, email, uni: m.name, clubs: [] };
+    S.draft.signup = { name, email };
+    go("verify");
+  },
+  plant: (f) => {
+    const title = f.title.value.trim(); const body = f.body.value.trim();
+    if (!title) { toast("제목을 적어 주세요."); f.title.focus(); return; }
+    const cat = (f.querySelector('input[name="cat"]:checked') || {}).value || "campus";
+    const i = { id: uid(), title, body: body || "아직 자세한 내용은 없어요. 신선과 이야기하며 채워 가요.", stage: 1, createdAt: now(), visibility: "private", category: cat, answers: {}, freeLeft: S.settings.freePerStage, paidLeft: 0, chat: [], log: [], seeking: [], summary: "", team: [], funding: null, plan: null, likes: 0 };
+    S.ideas.push(i); markActivity(); save(); closeSheet();
+    go("seed", { id: i.id }); toast("씨앗을 심었어요. 심은 시각이 기록됐어요.");
+  },
+  chat: (f) => {
+    const i = idea(f.dataset.id); const text = f.msg.value.trim(); if (!text) return;
+    if (i.pending && i.pending.unpaid) { openPay(i); return; }
+    S.draft["chat-" + i.id] = "";
+    f.msg.value = "";
+    i.chat.push({ role: "me", text, at: now() });
+    i.chat.push({ role: "typing", at: now() });
+    render();
+    setTimeout(() => {
+      i.chat = i.chat.filter((m) => m.role !== "typing");
+      i.chat.pop(); // onAnswer 가 다시 넣음
+      onAnswer(i, text); save(); render();
+    }, 700);
+  },
+  req: (f) => {
+    const id = f.dataset.id, kind = f.dataset.kind;
+    S.sentRequests[id] = { ...(S.sentRequests[id] || {}), [kind]: "pending" };
+    save(); closeSheet(); render(); toast(kind === "team" ? "팀 참여 신청을 보냈어요." : "열람 요청을 보냈어요.");
+  },
+  fund: (f) => {
+    const i = idea(f.dataset.id); const st = S.settings;
+    const goal = +(document.querySelector('input[name="goal"]:checked') || { value: 500 }).value;
+    if (balance() < st.fundingFee) return;
+    addTx(-st.fundingFee, `펀딩 등록 · ${i.title}`);
+    i.funding = { goal, raised: 0, backers: 0, endsAt: now() + 14 * DAY };
+    save(); closeSheet(); render(); toast("펀딩을 등록했어요. 공개 정원 카드에 '펀딩 중'이 표시돼요.");
+  },
+};
+
+/* ---------- 안내 패널 ---------- */
+const JUMPS = {
+  start: () => { S.signedIn = false; go("landing"); },
+  plant: () => { S.signedIn = true; go("garden"); setTimeout(() => A.openPlant(), 80); },
+  chat: () => { S.signedIn = true; go("chat", { id: "lib" }); },
+  stage: () => {
+    S.signedIn = true; const i = idea("lib");
+    if (i.stage !== 2) { go("chat", { id: "lib" }); return; }
+    i.answers.alt = i.answers.alt || "가방이나 책을 올려서 자리 맡기, 학교 좌석 예약 키오스크로 4시간씩 연장";
+    if (!i.session) { i.session = { newKeys: [], startedAt: now() }; i.chat.push({ role: "note", text: `${fmtDateTime(now())} · ${STAGES[i.stage - 1].name} 단계`, at: now() }); }
+    i.pending = null;
+    const nx = nextUnanswered(i);
+    if (nx) askItem(i, nx, "지난 이야기는 정리해 뒀어요. 줄기가 되려면 이것 하나만 남았어요.");
+    save(); go("chat", { id: "lib" });
+  },
+  bloom: () => { S.signedIn = true; go("seed", { id: "class" }); },
+  plan: () => { S.signedIn = true; go("plan", { id: "share" }); },
+  share: () => { S.signedIn = true; go("seed", { id: "share", tab: "share" }); },
+  feed: () => { S.signedIn = true; go("feed"); },
+  other: () => { S.signedIn = true; go("feedDetail", { id: "f1" }); },
+  requests: () => { S.signedIn = true; go("requests"); },
+  points: () => { S.signedIn = true; go("points"); },
+  admin: () => { S.signedIn = true; go("admin"); },
+};
+function guideBody() {
+  const step = (j, b, s) => `<li><button class="jump" data-action="jump" data-j="${j}"><span><b>${b}</b><span>${s}</span></span></button></li>`;
+  const item = (j, b, s) => `<li><button class="jump" data-action="jump" data-j="${j}"><span><b>${b}</b><span>${s}</span></span></button></li>`;
+  return `
+    <section><h2>핵심 루프 따라가기</h2><ol>
+      ${step("start", "가입", "학교 이메일로 대학 커뮤니티 자동 소속")}
+      ${step("plant", "씨앗 심기", "제목과 불편했던 점, 30초 입력")}
+      ${step("chat", "정원 신선과 대화", "한 번에 질문 하나. '예시 답변 넣기'로 빠르게")}
+      ${step("stage", "단계 판정과 성장", "빠진 항목이 없으면 다음 단계로 자람")}
+      ${step("bloom", "개화 직전 씨앗", "꽃봉오리 → 검증·비즈니스 모델")}
+      ${step("plan", "기획서", "성장 일지로 자동 생성, 바로 편집")}
+      ${step("share", "꽃꽂이로 공유", "공개 범위, 요약, 찾는 역량, 팀 추천")}
+    </ol></section>
+    <section><h2>다른 화면</h2><ul>
+      ${item("feed", "공개 정원", "이번 주 꽃꽂이, 커뮤니티·전체, 공감")}
+      ${item("other", "다른 사람 아이디어", "요약만 공개, 열람 요청, 팀 참여 신청, 펀딩 응원")}
+      ${item("requests", "받은 신청", "수락하면 팀 결성 포인트")}
+      ${item("points", "포인트와 테스트 충전", "모든 획득·사용 내역")}
+      ${item("admin", "관리자", "베타 지표, 포인트 수치 조정")}
+    </ul></section>`;
+}
+function renderGuide() {
+  $("#guide").innerHTML = `
+    <div class="stack" style="gap:10px">${WORDMARK}<h1>아이디어 정원<br>베타 프로토타입</h1>
+    <p class="lede">불편했던 순간을 씨앗으로 심고, 정원 신선의 질문에 답하며 기획서까지 키우는 앱이에요. 서버 없이 화면 흐름만 보여 주며, 정원 신선의 질문은 미리 짜 둔 각본입니다.</p></div>
+    ${guideBody()}
+    <div class="foot"><span>사용한 내용은 이 브라우저에만 저장돼요.</span><button class="link-btn" data-action="reset" style="align-self:flex-start">예시 데이터로 처음부터</button></div>`;
+}
+
+/* ---------- 이벤트 ---------- */
+document.addEventListener("click", (ev) => {
+  const scrim = ev.target.closest("[data-scrim]");
+  if (scrim && ev.target === scrim) { closeSheet(); return; }
+  const el = ev.target.closest("[data-action]");
+  if (!el) return;
+  const fn = A[el.dataset.action];
+  if (!fn) return;
+  if (el.closest(".sheet") && el.dataset.action === "jump") closeSheet();
+  ev.preventDefault();
+  fn({ ...el.dataset }, ev);
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") { closeSheet(); document.querySelectorAll(".celebrate").forEach((c) => c.remove()); }
+  const el = ev.target.closest && ev.target.closest('[role="button"][data-action]');
+  if (el && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); el.click(); }
+  if (ev.target.id === "chat-input" && ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); ev.target.form.requestSubmit(); }
+});
+document.addEventListener("submit", (ev) => {
+  const f = ev.target.closest("[data-form]"); if (!f) return;
+  ev.preventDefault(); FORMS[f.dataset.form](f);
+});
+document.addEventListener("input", (ev) => {
+  const t = ev.target;
+  if (t.dataset.live === "signupEmail") {
+    S.draft.signup = { ...(S.draft.signup || {}), email: t.value };
+    const m = matchUni(t.value); const typed = t.value.includes("@") && (t.value.split("@")[1] || "").includes(".");
+    const h = $("#su-email-hint");
+    h.textContent = typed ? (m ? `${m.name} 커뮤니티에 자동으로 소속돼요.` : "베타 참여 대학의 학교 이메일만 가입할 수 있어요.") : "예: you@hanbit.test, you@saesol.test";
+    h.style.color = typed ? (m ? "var(--leaf-deep)" : "var(--danger)") : "";
+  }
+  if (t.dataset.live === "onbCode") { (S.draft.onb ||= { interests: [], skills: [] }).code = t.value; }
+  if (t.dataset.live === "summary") { const i = idea(t.dataset.id); i.summary = t.value; save(); }
+  if (t.id === "chat-input") { const i = idea(S.route.id); if (i) S.draft["chat-" + i.id] = t.value; t.style.height = "auto"; t.style.height = Math.min(120, t.scrollHeight) + "px"; }
+  if (t.dataset.plan) { const i = idea(t.dataset.plan); i.plan[+t.dataset.k].b = t.innerText; save(); }
+  if (t.dataset.setting) { const v = Math.max(1, Math.min(999, parseInt(t.value || "0", 10) || 1)); S.settings[t.dataset.setting] = v; save(); }
+});
+
+render(true);
+})();
+</script>
