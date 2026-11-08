@@ -3,81 +3,91 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#cfe8fa">
+<meta name="theme-color" content="#f4ede0">
 <title>아이디어 정원 풍선 버전</title>
 <meta name="description" content="떠오른 생각을 풍선에 담고 정원 신선의 질문으로 키워 하늘로 띄우는 앱의 베타 프로토타입 (풍선 버전)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@700;800&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
 <style>
 /* Layout: 데스크톱은 왼쪽 안내 패널 + 오른쪽 휴대폰 프레임, 휴대폰에서는 앱이 화면 전체 */
 /*
-  풍선 버전 디자인 토큰 (ui-ux-pro-max: 생산성 도구 · Flat + 마이크로 인터랙션, 하늘색 + 햇살 앰버 팔레트)
-  토큰 이름은 원본과 같게 두고 값만 하늘 팔레트로 바꿨습니다.
-  - leaf: 주요 행동(하늘색). 흰 글자 대비 4.5:1 이상이 되도록 한 단계 짙게
-  - bloom: '비행' 단계와 강조(햇살 앰버)
+  풍선 버전 디자인 토큰 · 60/30/10 규칙
+  - 60% 메인: 크림 #F4EDE0 (배경·메모장·하늘 아래쪽). 다크 모드에서는 네이비가 60%를 맡아요.
+  - 30% 보조: 네이비 #14213D (글자·기본 버튼·집·자라는 풍선). 다크 모드에서는 크림이 30%.
+  - 10% 강조: 코랄 #FF6B5B (화면마다 핵심 행동 하나, 날 준비된 풍선, 새 소식 점). 위에 올리는 글자는 네이비.
+  코랄은 크림 위 글자로 쓰면 대비가 부족해, 글자용으로는 짙은 코랄(--bloom)을 따로 둡니다.
+  토큰 이름(leaf, bloom 등)은 원본과 같게 두고 값만 바꿨습니다.
 */
 :root {
-  --dew: #f3f8fc;
-  --paper: #ffffff;
-  --soil: #0f172a;
-  --soil-soft: #475569;
-  --soil-faint: #64748b;
-  --line: #d5e3ef;
-  --leaf: #0369a1;
-  --leaf-deep: #075985;
-  --on-leaf: #ffffff;
-  --sprout: #bae6fd;
-  --sprout-soft: #e0f2fe;
-  --bloom: #b45309;
-  --bloom-soft: #fef3c7;
-  --danger: #b91c1c;
-  --danger-soft: #fee2e2;
-  --grass-0: #e2ecf5; --grass-1: #bae6fd; --grass-2: #38bdf8; --grass-3: #0284c7;
-  --frame: #cbd9e6;
-  --stage-bg: #dceaf5;
-  --shadow: 0 24px 60px -28px rgba(3, 105, 161, .45);
-  --vase: rgba(160, 190, 200, .35);
-  --vase-line: rgba(90, 120, 130, .55);
-  --sky-1: #cfe8fa; --sky-2: #eaf5fd; --sky-3: #fff1df;
-  --cloud: #ffffff;
-  --hill: #dcebd6;
-  --string: #94a3b8;
-  --tag-bg: rgba(255, 255, 255, .94);
-  --house-wall: #f7f1e8; --house-roof: #3e5c8a; --house-window: #fde68a; --house-door: #8b5e3c; --house-line: #2b3d5c;
-  --push-bg: rgba(255, 255, 255, .9);
+  --dew: #f4ede0;
+  --paper: #fbf7ef;
+  --soil: #14213d;
+  --soil-soft: #3f4a66;
+  --soil-faint: #5d667c;
+  --line: #e0d5c1;
+  --leaf: #14213d;
+  --leaf-deep: #14213d;
+  --on-leaf: #f4ede0;
+  --sprout: #d8cdb7;
+  --sprout-soft: #ebe2d1;
+  --bloom: #b23a2c;
+  --bloom-soft: #ffe1da;
+  --accent: #ff6b5b;
+  --on-accent: #14213d;
+  --danger: #b42318;
+  --danger-soft: #fde2de;
+  --grass-0: #e6ddcb; --grass-1: #bcc4d6; --grass-2: #5a6890; --grass-3: #14213d;
+  --frame: #d8cdb7;
+  --stage-bg: #e9e1d2;
+  --shadow: 0 24px 60px -28px rgba(20, 33, 61, .45);
+  --card-shadow: 0 14px 30px -22px rgba(20, 33, 61, .55);
+  --vase: rgba(160, 150, 130, .3);
+  --vase-line: rgba(90, 85, 75, .5);
+  --sky-1: #f4ede0; --sky-2: #f8e6da; --sky-3: #fcdcd0;
+  --glow: #ff6b5b;
+  --cloud: #fffbf5;
+  --hill: #e6d9c2;
+  --string: #8c93a6;
+  --tag-bg: rgba(251, 247, 239, .95);
+  --house-wall: #fbf7ef; --house-roof: #14213d; --house-window: #ffd9a8; --house-door: #ff6b5b; --house-line: #14213d;
+  --push-bg: rgba(251, 247, 239, .92);
+  /* 풍선: 단계가 오를수록 커지고 짙어져요. 5단계(비행)만 코랄 */
+  --b1: #bcc4d6; --b2: #8e9ab7; --b3: #5a6890; --b4: #26345a; --b5: #ff6b5b; --b-down: #c9bfac;
 
-  --font-display: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-display: "Gothic A1", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --font-sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
   --r-field: 12px;
   --r-sheet: 22px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --dew: #0b1424; --paper: #121e31; --soil: #e6eef8; --soil-soft: #a9b8cc; --soil-faint: #8a9ab1;
-    --line: #24354f; --leaf: #7cc4f2; --leaf-deep: #a7d8f7; --on-leaf: #06223a; --sprout: #1e4a6b; --sprout-soft: #12304a;
-    --bloom: #fbbf24; --bloom-soft: #3a2c0b; --danger: #fca5a5; --danger-soft: #3b1515;
-    --grass-0: #1a2a40; --grass-1: #1e4a6b; --grass-2: #2f7db5; --grass-3: #7cc4f2;
-    --frame: #24354f; --stage-bg: #070d18; --shadow: 0 24px 60px -28px rgba(0,0,0,.8);
-    --vase: rgba(140, 180, 190, .18); --vase-line: rgba(160, 200, 210, .45);
-    --sky-1: #050b18; --sky-2: #0e2342; --sky-3: #1e3357;
-    --cloud: #1c2b44; --hill: #13261f; --string: #5b6b82; --tag-bg: rgba(18, 30, 49, .92);
-    --house-wall: #d9d2c6; --house-roof: #5877a8; --house-window: #fbbf24; --house-door: #6b4a30; --house-line: #0b1424;
-    --push-bg: rgba(30, 41, 59, .9);
+    --dew: #0e1830; --paper: #14213d; --soil: #f4ede0; --soil-soft: #cfc6b5; --soil-faint: #a39c8c;
+    --line: #2a3758; --leaf: #f4ede0; --leaf-deep: #f4ede0; --on-leaf: #14213d; --sprout: #33406a; --sprout-soft: #1d2a4a;
+    --bloom: #ff8f82; --bloom-soft: #3b2333; --accent: #ff6b5b; --on-accent: #14213d; --danger: #fca5a5; --danger-soft: #3b1515;
+    --grass-0: #1d2a4a; --grass-1: #4a5778; --grass-2: #b3bacb; --grass-3: #f4ede0;
+    --frame: #2a3758; --stage-bg: #080e1e; --shadow: 0 24px 60px -28px rgba(0,0,0,.8); --card-shadow: 0 14px 30px -22px rgba(0,0,0,.9);
+    --vase: rgba(140, 150, 180, .18); --vase-line: rgba(170, 180, 210, .45);
+    --sky-1: #0a1124; --sky-2: #14213d; --sky-3: #4b2c47; --glow: #ff6b5b;
+    --cloud: #1f2c4d; --hill: #0b1428; --string: #6b7591; --tag-bg: rgba(20, 33, 61, .92);
+    --house-wall: #ede5d6; --house-roof: #3a4a75; --house-window: #ffd9a8; --house-door: #ff6b5b; --house-line: #0a1124;
+    --push-bg: rgba(29, 42, 74, .92);
+    --b1: #4a5778; --b2: #7c88a6; --b3: #b3bacb; --b4: #ede5d6; --b5: #ff6b5b; --b-down: #4a4f5e;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --dew: #0b1424; --paper: #121e31; --soil: #e6eef8; --soil-soft: #a9b8cc; --soil-faint: #8a9ab1;
-  --line: #24354f; --leaf: #7cc4f2; --leaf-deep: #a7d8f7; --on-leaf: #06223a; --sprout: #1e4a6b; --sprout-soft: #12304a;
-  --bloom: #fbbf24; --bloom-soft: #3a2c0b; --danger: #fca5a5; --danger-soft: #3b1515;
-  --grass-0: #1a2a40; --grass-1: #1e4a6b; --grass-2: #2f7db5; --grass-3: #7cc4f2;
-  --frame: #24354f; --stage-bg: #070d18; --shadow: 0 24px 60px -28px rgba(0,0,0,.8);
-  --vase: rgba(140, 180, 190, .18); --vase-line: rgba(160, 200, 210, .45);
-  --sky-1: #050b18; --sky-2: #0e2342; --sky-3: #1e3357;
-  --cloud: #1c2b44; --hill: #13261f; --string: #5b6b82; --tag-bg: rgba(18, 30, 49, .92);
-  --house-wall: #d9d2c6; --house-roof: #5877a8; --house-window: #fbbf24; --house-door: #6b4a30; --house-line: #0b1424;
-  --push-bg: rgba(30, 41, 59, .9);
+  --dew: #0e1830; --paper: #14213d; --soil: #f4ede0; --soil-soft: #cfc6b5; --soil-faint: #a39c8c;
+  --line: #2a3758; --leaf: #f4ede0; --leaf-deep: #f4ede0; --on-leaf: #14213d; --sprout: #33406a; --sprout-soft: #1d2a4a;
+  --bloom: #ff8f82; --bloom-soft: #3b2333; --accent: #ff6b5b; --on-accent: #14213d; --danger: #fca5a5; --danger-soft: #3b1515;
+  --grass-0: #1d2a4a; --grass-1: #4a5778; --grass-2: #b3bacb; --grass-3: #f4ede0;
+  --frame: #2a3758; --stage-bg: #080e1e; --shadow: 0 24px 60px -28px rgba(0,0,0,.8); --card-shadow: 0 14px 30px -22px rgba(0,0,0,.9);
+  --vase: rgba(140, 150, 180, .18); --vase-line: rgba(170, 180, 210, .45);
+  --sky-1: #0a1124; --sky-2: #14213d; --sky-3: #4b2c47; --glow: #ff6b5b;
+  --cloud: #1f2c4d; --hill: #0b1428; --string: #6b7591; --tag-bg: rgba(20, 33, 61, .92);
+  --house-wall: #ede5d6; --house-roof: #3a4a75; --house-window: #ffd9a8; --house-door: #ff6b5b; --house-line: #0a1124;
+  --push-bg: rgba(29, 42, 74, .92);
+  --b1: #4a5778; --b2: #7c88a6; --b3: #b3bacb; --b4: #ede5d6; --b5: #ff6b5b; --b-down: #4a4f5e;
   color-scheme: dark;
 }
 
@@ -670,6 +680,41 @@ details[open] .chev { transform: rotate(180deg); }
 .week.row-wide li { width: 26px; font-size: 12px; }
 .week.row-wide b { font-size: 13px; }
 
+/* ---------- 60 / 30 / 10 ---------- */
+/* 10%: 코랄은 화면마다 핵심 행동 하나와 '비행' 풍선, 새 소식 점에만 */
+.btn.cta, .btn.bloom, .send.cta { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.btn.cta:hover, .btn.bloom:hover, .send.cta:hover { background: var(--accent); filter: brightness(1.05); }
+.btn.cta:active, .send.cta:active { transform: scale(.98); }
+.b-btn[data-stage="5"] .b-tag { background: var(--accent); color: var(--on-accent); font-weight: 800; }
+.house-btn .dot, .me-btn .dot, .bar i, .hbar .track2 i.bloomy, .track div[data-bloom][data-on]::before, .timeline [data-k="comment"] i { background: var(--accent); }
+.tabs .badge { background: var(--accent); color: var(--on-accent); }
+.points-chip i { background: var(--bloom-soft); box-shadow: inset 0 0 0 2.5px var(--accent); }
+.push .app-ic { background: var(--soil); }
+/* 30%: 네이비는 글자와 기본 행동 */
+.write-date { margin: 0; font-size: 28px; line-height: 1.15; }
+/* 글자: 제목은 굵은 Gothic A1을 좁게, 본문은 IBM Plex Sans KR */
+h1, h2, .display, .topbar h1, .hero h1, .sheet h2, .write-date, .sec-title { font-family: var(--font-display); font-weight: 800; letter-spacing: -.025em; }
+.hero h1 { font-size: 34px; line-height: 1.2; letter-spacing: -.035em; }
+.b-tag, .b-row b, .label-pill, .saved b, .wordmark, .menu-item b { font-weight: 700; letter-spacing: -.01em; }
+/* 하늘 위에 뜬 카드: 이번 주 기록 */
+.week.row-wide { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 10px 16px; box-shadow: var(--card-shadow); }
+.week.row-wide b { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -.03em; }
+.week.row-wide li[data-today] i { box-shadow: 0 0 0 3px var(--bloom-soft); }
+.b-tag { box-shadow: 0 6px 14px -10px rgba(20, 33, 61, .6); }
+/* 안내 패널의 색 비율 */
+.ratio { display: flex; height: 56px; border: 1.5px solid var(--soil); border-radius: 12px; overflow: hidden; }
+.ratio i { display: flex; align-items: flex-end; padding: 6px 8px; font-style: normal; }
+.ratio b { font-size: 13px; font-weight: 700; }
+.swatches { list-style: none; margin: 12px 0 14px; padding: 0; display: grid; gap: 8px; }
+.swatches li { display: grid; grid-template-columns: 34px 1fr; column-gap: 10px; align-items: center; }
+.swatches span { grid-row: span 2; width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); }
+.swatches b { font-size: 14px; font-weight: 600; }
+.swatches small { font-size: 12.5px; color: var(--soil-faint); }
+/* 새 소식은 크림 카드 + 코랄 점 하나로 (면 전체를 코랄로 칠하지 않아요) */
+.notice-banner { background: var(--paper); color: var(--soil); border: 1px solid var(--line); box-shadow: var(--card-shadow); justify-content: flex-start; }
+.notice-banner::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.notice-banner span { margin-left: auto; color: var(--soil); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
   .celebrate .old { opacity: 0; } .celebrate .new { opacity: 1; }
@@ -992,19 +1037,21 @@ function mixHex(a, b, t) {
   const x = p(a), y = p(b);
   return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join("");
 }
-const bColor = (x, stage) => mixHex(hue(x), "#ffffff", STAGE_TINT[(stage || 1) - 1]);
+// 60/30/10: 풍선 색은 카테고리가 아니라 단계로만 정해요. 1~4단계는 네이비 계열, 5단계(비행)만 코랄
+const bColor = (x, stage) => `var(--b${stage || 1})`;
+const DOWN = "var(--b-down)";
 /** 풍선 그림. string=true 면 아래로 짧은 끈까지 그립니다. */
 function balloon(stage, color, { string = false, deflated = false, label } = {}) {
-  const dark = mixHex(color, "#000000", 0.22);
+  const fill = `style="fill:${color}"`;
   const vb = string ? "0 0 60 90" : "0 0 60 64";
   const aria = label ? `role="img" aria-label="${esc(label)}"` : 'aria-hidden="true"';
   if (deflated) {
-    return `<svg viewBox="${vb}" ${aria}><path d="M9 54 C 5 43, 16 34, 29 38 C 43 33, 56 44, 50 55 C 44 63, 15 63, 9 54 Z" fill="${color}"/><path d="M48 55 L54 60" stroke="${dark}" stroke-width="2" stroke-linecap="round"/>${string ? `<path d="M54 60 C 58 70, 46 78, 52 88" stroke="var(--string)" stroke-width="1.4" fill="none"/>` : ""}</svg>`;
+    return `<svg viewBox="${vb}" ${aria}><path d="M9 54 C 5 43, 16 34, 29 38 C 43 33, 56 44, 50 55 C 44 63, 15 63, 9 54 Z" ${fill}/><path d="M48 55 L54 60" stroke="var(--string)" stroke-width="2" stroke-linecap="round"/>${string ? `<path d="M54 60 C 58 70, 46 78, 52 88" stroke="var(--string)" stroke-width="1.4" fill="none"/>` : ""}</svg>`;
   }
   return `<svg viewBox="${vb}" ${aria}>
-    <ellipse cx="30" cy="30" rx="26" ry="29" fill="${color}"/>
+    <ellipse cx="30" cy="30" rx="26" ry="29" ${fill}/>
     <path d="M14 20 C 16 12, 23 7, 31 6.5" stroke="rgba(255,255,255,.7)" stroke-width="4" stroke-linecap="round" fill="none"/>
-    <path d="M25.5 61 L34.5 61 L30 56 Z" fill="${dark}"/>
+    <path d="M25.5 61 L34.5 61 L30 56 Z" ${fill}/><path d="M25.5 61 L34.5 61 L30 56 Z" fill="rgba(0,0,0,.22)"/>
     ${string ? `<path d="M30 61 C 26 70, 35 78, 30 90" stroke="var(--string)" stroke-width="1.4" fill="none"/>` : ""}
   </svg>`;
 }
@@ -1170,8 +1217,10 @@ function skyScene(list, { house = true, ground = [], lift = 0, action = "balloon
   const ax = 180, ay = hy + 13;
   const items = shown.map((x, k) => { const [cx, cy] = SLOTS[k]; const r = STAGE_SIZE[x.stage - 1] / 2; return { x, cx, cy, r }; });
   const strings = house ? items.map(({ cx, cy, r }) => { const by = cy + r * (64 / 60) * 0.98; return `<path d="M${cx} ${by.toFixed(1)} Q ${(cx + (ax - cx) * 0.25).toFixed(1)} ${((by + ay) / 2 + 12).toFixed(1)} ${ax} ${ay}" stroke="var(--string)" stroke-width="1.2" fill="none"/>`; }).join("") : "";
-  const deflated = ground.slice(0, 4).map((g, k) => `<g transform="translate(${[38, 74, 286, 318][k]} ${384 + (k % 2) * 4}) scale(.42)">${balloon(g.stage, mixHex(bColor(g, g.stage), "#94a3b8", 0.45), { deflated: true }).replace(/<svg[^>]*>|<\/svg>/g, "")}</g>`).join("");
+  const deflated = ground.slice(0, 4).map((g, k) => `<g transform="translate(${[38, 74, 286, 318][k]} ${384 + (k % 2) * 4}) scale(.42)">${balloon(g.stage, DOWN, { deflated: true }).replace(/<svg[^>]*>|<\/svg>/g, "")}</g>`).join("");
   const svg = `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+    <defs><radialGradient id="dusk" cx="50%" cy="50%" r="50%"><stop offset="0" style="stop-color:var(--glow)" stop-opacity=".42"/><stop offset=".55" style="stop-color:var(--glow)" stop-opacity=".12"/><stop offset="1" style="stop-color:var(--glow)" stop-opacity="0"/></radialGradient></defs>
+    <ellipse cx="180" cy="392" rx="180" ry="150" fill="url(#dusk)"/>
     ${cloud(14, 262, 1.1, 0.75)}${cloud(268, 280, 1, 0.65)}${cloud(222, 4, 0.8, 0.5)}
     <path d="M0 392 C 70 376, 140 386, 180 390 C 230 394, 290 376, 360 388 L360 420 L0 420 Z" fill="var(--hill)"/>
     ${deflated}
@@ -1200,7 +1249,7 @@ SCREENS.landing = () => `
       <p>왜 늘 다른 사람이 해내는 걸 지켜만 보시나요? 앱을 열자마자 적거나 말하면, 키우는 건 정원 신선이 질문으로 도와요.</p>
     </section>
     <section aria-label="풍선이 자라는 다섯 단계" class="stack" style="gap:8px">
-      <ol class="stage-row" style="list-style:none;margin:0;padding:0 0 2px;align-items:end">${STAGES.map((s, i) => `<li class="grow-in" style="animation-delay:${120 + i * 130}ms;display:flex;justify-content:center"><div style="width:${40 + i * 12}%">${balloon(s.n, mixHex("#4f8fdb", "#ffffff", STAGE_TINT[s.n - 1]), { string: true })}</div></li>`).join("")}</ol>
+      <ol class="stage-row" style="list-style:none;margin:0;padding:0 0 2px;align-items:end">${STAGES.map((s, i) => `<li class="grow-in" style="animation-delay:${120 + i * 130}ms;display:flex;justify-content:center"><div style="width:${40 + i * 12}%">${balloon(s.n, `var(--b${s.n})`, { string: true })}</div></li>`).join("")}</ol>
       <ol class="stage-names" style="list-style:none;margin:0;padding:0">${STAGES.map((s) => `<li><b style="${s.n === 5 ? "color:var(--bloom)" : ""}">${s.name}</b><span>${s.goal}</span></li>`).join("")}</ol>
     </section>
     <section class="pitch">
@@ -1235,7 +1284,7 @@ SCREENS.signup = () => {
 
 SCREENS.verify = () => `
   <div class="view-inner" style="text-align:center;align-items:center">
-    <div style="width:90px;margin-top:24px">${balloon(1, "#bcd6f2", { string: true })}</div>
+    <div style="width:90px;margin-top:24px">${balloon(1, "var(--b1)", { string: true })}</div>
     <h1 class="display" style="font-size:24px">인증 메일을 보냈어요</h1>
     <p class="muted"><b style="color:var(--soil);font-weight:500">${esc(S.draft.signup?.email || "")}</b>로 보낸 메일의 링크를 누르면 가입이 끝나요.</p>
     <div class="panel" style="width:100%;text-align:left;display:flex;flex-direction:column;gap:10px">
@@ -1270,7 +1319,7 @@ SCREENS.write = () => {
   const last = S.lastSaved ? idea(S.lastSaved) : null;
   const wide = isWide();
   return `<div class="write">
-    <div class="write-top"><span class="write-date">${date}</span>${wide ? "" : `<button class="house-btn" data-action="openMenu" aria-label="메뉴 열기: 커뮤니티, 아카이브, 내 정보">${ICON_HOUSE}${unreadCount() ? '<span class="dot"></span>' : ""}</button>`}</div>
+    <div class="write-top"><h1 class="write-date">${date}</h1>${wide ? "" : `<button class="house-btn" data-action="openMenu" aria-label="메뉴 열기: 커뮤니티, 아카이브, 내 정보">${ICON_HOUSE}${unreadCount() ? '<span class="dot"></span>' : ""}</button>`}</div>
     <form class="pad" data-form="capture">
       <label for="capture" class="pad-label">떠오른 생각</label>
       <textarea id="capture" name="text" placeholder="불편했던 순간이나 만들어 보고 싶은 것을 그대로 적어 두세요. 정리는 나중에 해도 돼요.">${esc(S.draft.capture || "")}</textarea>
@@ -1278,7 +1327,7 @@ SCREENS.write = () => {
       <div class="pad-actions">
         <button type="button" class="mic big" data-action="voice" data-target="capture" aria-label="말로 기록하기">${ICON_MIC}</button>
         <span class="faint">말로 해도 돼요.<br>주절주절 길게 말해도 받아 적어요.</span>
-        <button type="submit" class="btn primary">풍선에 담기</button>
+        <button type="submit" class="btn cta">풍선에 담기</button>
       </div>
     </form>
     ${last ? `<div class="saved" role="status">${balloon(1, bColor(last, 1), { string: true })}<p>새 풍선 <b>‘${esc(last.label)}’</b>${batchim(last.label) ? "이" : "가"} 떠올랐어요.<br><span class="faint">처음 기록 ${relTime(last.createdAt)}</span></p><button class="link-btn" data-action="openRename" data-id="${last.id}">이름표 고치기</button></div>` : ""}
@@ -1325,7 +1374,7 @@ SCREENS.seed = (r) => {
   <div class="view-inner">
     <div class="topbar"><div class="left">${backTo(sleeping ? "archive" : "sky")}</div><span class="chip ${i.visibility === "private" ? "plain" : ""}">${{ private: "비공개", community: "내 커뮤니티 공개", all: "전체 공개" }[i.visibility]}</span></div>
     ${sleeping ? `<div class="notice stack" style="gap:8px"><b>땅에 내려앉은 풍선이에요</b><span>${esc(sleepReason(i))}</span><div class="row"><button class="btn primary small" data-action="wake" data-id="${i.id}">바람 넣기</button>${i.shared ? `<span class="chip">커뮤니티에 나누는 중</span>` : `<button class="btn quiet small" data-action="openShare" data-id="${i.id}">풍선 줄 건네기</button>`}</div></div>` : ""}
-    <section class="idea-hero" style="grid-template-columns:96px 1fr"><div style="width:${40 + i.stage * 11}px;justify-self:center">${balloon(i.stage, sleeping ? "#b8c2cf" : bColor(i, i.stage), { string: true })}</div>
+    <section class="idea-hero" style="grid-template-columns:96px 1fr"><div style="width:${40 + i.stage * 11}px;justify-self:center">${balloon(i.stage, sleeping ? DOWN : bColor(i, i.stage), { string: true })}</div>
       <div class="stack" style="gap:6px"><div class="row" style="gap:6px"><span class="label-pill ${i.stage === 5 ? "flying" : ""}">${esc(i.label)}</span><button class="link-btn" data-action="openRename" data-id="${i.id}">이름표 고치기</button></div><h1>${esc(i.title)}</h1><p class="meta">${stageText(i.stage)} · 처음 기록 ${fmtDateTime(i.createdAt)}</p></div></section>
     <div class="track" aria-label="성장 단계">${STAGES.map((s) => `<div ${s.n <= i.stage ? "data-on" : ""} ${s.n === next && !sleeping ? "data-now" : ""} ${s.n === 5 ? "data-bloom" : ""}>${s.name}</div>`).join("")}</div>
     <section class="stack" style="gap:6px"><h2 class="sec-title">발전 과정 <small>기록 → 대화 → 첨삭 → 이름표 → 성장</small></h2>${timeline(i)}</section>
@@ -1472,7 +1521,7 @@ SCREENS.chat = (r) => {
       <form class="composer with-mic" data-form="chat" data-id="${i.id}">
         <button type="button" class="mic" data-action="voice" data-target="chat" aria-label="말로 답하기">${ICON_MIC}</button>
         <textarea class="textarea" id="chat-input" name="msg" rows="1" placeholder="${pendItem ? "생각나는 대로 답해 주세요" : "신선에게 할 말을 적어 주세요"}" aria-label="답변">${esc(S.draft["chat-" + i.id] || "")}</textarea>
-        <button class="send" type="submit" aria-label="보내기"><svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+        <button class="send cta" type="submit" aria-label="보내기"><svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
       </form>
       <button class="btn quiet full" data-action="endSession" data-id="${i.id}">오늘은 여기까지</button>
     </div>
@@ -1663,7 +1712,7 @@ SCREENS.archive = () => {
 function archCard(i) {
   const team = i.archived === "team";
   return `<article class="arch">
-    <div style="width:52px;justify-self:center;margin-top:8px">${balloon(i.stage, mixHex(bColor(i, i.stage), "#94a3b8", 0.5), { deflated: true, string: true })}</div>
+    <div style="width:52px;justify-self:center;margin-top:8px">${balloon(i.stage, DOWN, { deflated: true, string: true })}</div>
     <div style="min-width:0">
       <button class="arch-open" data-action="go" data-to="seed" data-id="${i.id}"><span class="label-pill" style="align-self:flex-start;font-size:13px;padding:1px 9px;filter:saturate(.4)">${esc(i.label)}</span><h3>${esc(i.title)}</h3><span class="faint">${stageText(i.stage)} · 처음 기록 ${fmtDate(i.createdAt)} · 마지막 손길 ${relDays(lastTouched(i))}</span></button>
       <p class="why">${team ? `팀 ${i.team.length + 1}명 (${[S.user.name, ...i.team.map((p) => person(p).name)].join(", ")}) · ` : ""}${esc(sleepReason(i))}</p>
@@ -1725,7 +1774,7 @@ SCREENS.notify = () => {
     <section class="stack" style="gap:8px">
       <h2 class="sec-title">알림 미리보기 <small>${n.days.length ? `${DAY_NAMES[n.days[0]]}요일 ${slot[1]}` : "꺼짐"}</small></h2>
       <div class="preview-wrap"><div class="push" role="img" aria-label="알림 미리보기: ${esc(msg)}">
-        <span class="app-ic">${balloon(3, "#e0f2fe", { string: true })}</span>
+        <span class="app-ic">${balloon(5, "var(--accent)", { string: true })}</span>
         <div style="min-width:0"><div class="push-top"><b style="color:var(--soil)">아이디어 정원</b><span>지금</span></div><p>${esc(msg)}</p></div>
       </div></div>
       <button class="btn quiet full" data-action="nextMsg">다른 문구 보기</button>
@@ -1995,7 +2044,7 @@ function closeSheet() { stopVoiceQuietly(); document.querySelectorAll(".scrim").
 function closeOverlays() { document.querySelectorAll(".celebrate").forEach((c) => c.remove()); }
 function celebrate(from, i) {
   const c = document.createElement("div"); c.className = "celebrate"; c.setAttribute("role", "dialog"); c.setAttribute("aria-label", "풍선이 커졌어요");
-  const rain = i.stage === 5 ? `<div class="petal-rain" aria-hidden="true">${Array.from({ length: 18 }, (_, k) => `<span style="left:${(k * 37) % 100}%;--c:${[hue(i), "#fbbf24", "#7cc4f2", "#f08a4b"][k % 4]};--d:${2.4 + (k % 5) * 0.35}s;--w:${0.5 + (k % 6) * 0.18}s;--x:${(k % 2 ? 1 : -1) * (20 + (k % 4) * 15)}px"></span>`).join("")}</div>` : "";
+  const rain = i.stage === 5 ? `<div class="petal-rain" aria-hidden="true">${Array.from({ length: 18 }, (_, k) => `<span style="left:${(k * 37) % 100}%;--c:${["var(--accent)", "var(--b2)", "var(--b4)", "var(--bloom-soft)"][k % 4]};--d:${2.4 + (k % 5) * 0.35}s;--w:${0.5 + (k % 6) * 0.18}s;--x:${(k % 2 ? 1 : -1) * (20 + (k % 4) * 15)}px"></span>`).join("")}</div>` : "";
   const box = (s) => `<div style="position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center"><div style="width:${36 + s * 12}%">${balloon(s, bColor(i, s), { string: true })}</div></div>`;
   c.innerHTML = `${rain}<div class="plant"><div class="old">${box(from)}</div><div class="new">${box(i.stage)}</div></div>
     <h2>${i.stage === 5 ? "풍선이 날 준비가 됐어요" : "풍선이 커졌어요"}</h2><span class="gain">${stageText(i.stage)} · +${S.settings.stageUp}P</span>
@@ -2476,6 +2525,15 @@ function guideBody() {
       ${item("points", "포인트와 테스트 충전", "모든 획득·사용 내역")}
       ${item("admin", "관리자", "베타 지표와 수치 조정")}
     </ul></section>
+    <section><h2>색은 60 / 30 / 10</h2>
+      <div class="ratio" role="img" aria-label="크림 60%, 네이비 30%, 코랄 10%"><i style="flex:6;background:var(--dew)"><b>60%</b></i><i style="flex:3;background:var(--soil);color:var(--paper)"><b>30%</b></i><i style="flex:1;background:var(--accent)"></i></div>
+      <ul class="swatches">
+        <li><span style="background:#f4ede0"></span><b>크림 #F4EDE0</b><small>배경, 메모장, 시트. 화면의 대부분</small></li>
+        <li><span style="background:#14213d"></span><b>네이비 #14213D</b><small>글자, 기본 버튼, 집, 자라는 풍선</small></li>
+        <li><span style="background:#ff6b5b"></span><b>코랄 #FF6B5B</b><small>화면마다 핵심 행동 하나, 날 준비된 풍선, 새 소식 점</small></li>
+      </ul>
+      <p class="faint">다크 모드에서는 네이비와 크림의 역할을 바꿔요. 코랄 위 글자는 대비를 위해 네이비로 씁니다.</p>
+    </section>
     <section><h2>원본(정원 버전)과 무엇이 달라졌나</h2>
       <div class="cmp"><table>
         <thead><tr><th>할 일</th><th>정원 버전 → 풍선 버전</th></tr></thead>
